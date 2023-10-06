@@ -1,0 +1,28 @@
+application:
+  timezone: Asia/Kolkata
+  debug: true
+logger:
+  console-log: true
+  file-log: true
+  level: debug
+  file-path: ./logs/app.log
+  max-size: 200
+  max-backups: 10
+  max-age: 30
+  compress: true
+auth:
+  expiry-duration: 3600
+  expiry-long-duration: 2592000
+  secret-key: random30293339393secured-key
+rest-server:
+  address: localhost
+  port: 8080
+database:
+  driver: mysql
+  host: localhost
+  port: 3306
+  username: owner
+  password: owner
+  dbname: brandnewwms
+  timezone: Asia/Kolkata
+  show-query: true
