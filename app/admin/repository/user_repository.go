@@ -1,11 +1,13 @@
 package repository
 
 import (
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"star-wms/app/admin/dto/user"
 	"star-wms/app/admin/models"
 	commonModels "star-wms/core/common/requests"
+	"star-wms/core/types"
 	"star-wms/core/utils"
 )
 
@@ -19,6 +21,7 @@ type UserRepository interface {
 	ExistsByStaffID(staffid string, ID uint) bool
 	ExistsByUsername(username string, ID uint) bool
 	ExistsByEMail(email string, ID uint) bool
+	GetLoginInfoByField(fieldName string, fieldValue interface{}) (*models.User, error)
 }
 
 type UserGormRepository struct {
@@ -130,7 +133,7 @@ func (p *UserGormRepository) Update(userModel *models.User) error {
 		return nil
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create user")
+		log.Error().Err(err).Msg("Failed to update user")
 	}
 	return err
 }
@@ -197,4 +200,18 @@ func (p *UserGormRepository) ExistsByEMail(email string, ID uint) bool {
 		return false
 	}
 	return count > 0
+}
+
+func (p *UserGormRepository) GetLoginInfoByField(fieldName string, fieldValue interface{}) (*models.User, error) {
+	var userModel *models.User
+	query := p.db.Model(&models.User{})
+	query.Where(fmt.Sprintf("%s = ?", fieldName), fieldValue)
+	if err := query.
+		Preload("Plant", "status = ?", types.StatusActive).
+		Preload("Roles", "status = ?", types.StatusActive).
+		Preload("Roles.Abilities").First(&userModel).Error; err != nil {
+		log.Debug().Err(err).Msgf("Failed to get user by %s", fieldName)
+		return nil, err
+	}
+	return userModel, nil
 }

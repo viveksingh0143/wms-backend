@@ -11,7 +11,7 @@ type Form struct {
 	Name     string       `json:"name" validate:"required,min=4,max=100"`
 	StaffID  string       `json:"staff_id" validate:"required,min=4,max=100"`
 	Username string       `json:"username" validate:"required,min=4,max=100"`
-	EMail    string       `json:"email" validate:"required,min=4,max=100"`
+	EMail    string       `json:"email" validate:"required,email,min=4,max=100"`
 	Password string       `json:"password" validate:"required,min=4,max=100"`
 	Status   types.Status `json:"status" validate:"required,gt=0"`
 	Roles    []*role.Form `json:"roles"`

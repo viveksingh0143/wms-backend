@@ -13,6 +13,8 @@ import (
 	"star-wms/app/admin/handlers/user"
 	"star-wms/app/admin/repository"
 	"star-wms/app/admin/service"
+	authHandlers "star-wms/app/auth/handlers"
+	authServices "star-wms/app/auth/services"
 	"star-wms/configs"
 	"star-wms/core/validation"
 )
@@ -31,6 +33,7 @@ type AppContainer struct {
 	UserRepo          repository.UserRepository
 	UserService       service.UserService
 	UserHandler       *user.Handler
+	AuthHandler       *authHandlers.Handler
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
@@ -50,6 +53,9 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	userService := service.NewUserService(userRepo, roleService, plantService)
 	userHandler := user.NewUserHandler(userService)
 
+	authService := authServices.NewAuthService(userRepo, roleService, plantService)
+	authHandler := authHandlers.NewAuthHandler(authService)
+
 	return &AppContainer{
 		DB:                db,
 		PermissionRepo:    permissionRepo,
@@ -64,6 +70,7 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		UserRepo:          userRepo,
 		UserService:       userService,
 		UserHandler:       userHandler,
+		AuthHandler:       authHandler,
 	}
 }
 
@@ -90,10 +97,19 @@ func (receiver *AppContainer) setupRouter() *gin.Engine {
 	binding.Validator = new(validation.DefaultValidator)
 	router := gin.Default()
 
-	log.Info().Msg("CORS activated for local only (http://localhost:3000)")
+	// Logging middleware for debugging
+	router.Use(func(c *gin.Context) {
+		log.Info().Msgf("Incoming request: origin=%s, method=%s, url=%s",
+			c.Request.Header.Get("Origin"), c.Request.Method, c.Request.URL)
+		c.Next()
+	})
+
+	log.Info().Msg("CORS activated for local only (http://localhost:3000) or (http://localhost:5173)")
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowCredentials = true
+	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:3000"}
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+
 	router.Use(cors.New(config))
 
 	return router

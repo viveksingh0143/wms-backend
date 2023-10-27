@@ -28,20 +28,24 @@ func (ph *Handler) List(c *gin.Context) {
 	var sorting requests.Sorting
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, filter))
+		resp := responses.NewValidationErrorResponse(err, filter)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	if err := c.ShouldBindQuery(&pagination); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, pagination))
+		resp := responses.NewValidationErrorResponse(err, pagination)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	if err := c.ShouldBindQuery(&sorting); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, sorting))
+		resp := responses.NewValidationErrorResponse(err, sorting)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	users, totalRecords, err := ph.service.GetAllUsers(filter, pagination, sorting)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err))
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewPageResponse(users, totalRecords, pagination.Page, pagination.PageSize))
@@ -56,10 +60,13 @@ func (ph *Handler) Create(c *gin.Context) {
 	}
 
 	validate := validation.GetValidator()
-	if userForm.Plant != nil {
+	if userForm.Plant != nil && userForm.Plant.ID == 0 {
+		userForm.Plant = nil
+	} else if userForm.Plant != nil {
 		if err := validate.Var(userForm.Plant.ID, "required,gt=0"); err != nil {
 			iErr := responses.NewInputError("plant.id", "invalid ID for Plant", userForm.Plant.ID)
 			c.JSON(http.StatusBadRequest, responses.NewErrorResponse(http.StatusBadRequest, "Invalid Plant ID format", iErr))
+			return
 		}
 	}
 	if err := validate.Struct(userForm); err != nil {
@@ -107,7 +114,7 @@ func (ph *Handler) Update(c *gin.Context) {
 	}
 
 	validate := validation.GetValidator()
-	if err := validate.Struct(userForm); err != nil {
+	if err := validate.StructExcept(userForm, "Password"); err != nil {
 		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, userForm))
 		return
 	}

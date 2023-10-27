@@ -6,6 +6,7 @@ import (
 	"star-wms/app/admin/handlers/plant"
 	"star-wms/app/admin/handlers/role"
 	"star-wms/app/admin/handlers/user"
+	"star-wms/app/auth/handlers"
 )
 
 func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
@@ -18,6 +19,11 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 					"message": "pong",
 				})
 			})
+
+			authRoutes := api.Group("/auth")
+			{
+				handlers.SetupAuthRoutes(authRoutes, receiver.AuthHandler)
+			}
 
 			adminRoutes := api.Group("/admin")
 			{

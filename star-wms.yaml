@@ -11,9 +11,11 @@ logger:
   max-age: 30
   compress: true
 auth:
-  expiry-duration: 3600
-  expiry-long-duration: 2592000
-  secret-key: random30293339393secured-key
+  expiry-duration: 300
+  expiry-long-duration: 86400
+  refresh-expiry-duration: 20
+  refresh-expiry-long-duration: 2592000
+  secret-key: random30293339393secured-keyy
 rest-server:
   address: localhost
   port: 8080

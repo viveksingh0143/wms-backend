@@ -11,3 +11,7 @@ func GenerateFromPassword(text string) (string, error) {
 	}
 	return string(hashedPassword), nil
 }
+
+func CompareHashAndPassword(password string, storedHashedPassword string) error {
+	return bcrypt.CompareHashAndPassword([]byte(storedHashedPassword), []byte(password))
+}
