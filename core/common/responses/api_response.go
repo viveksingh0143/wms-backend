@@ -78,7 +78,10 @@ func NewValidationErrorResponse(err error, anyType interface{}) APIResponse {
 }
 
 func NewPageResponse(data interface{}, totalRecords int64, currentPage int, pageSize int) APIResponse {
-	totalPages := (totalRecords + int64(pageSize) - 1) / int64(pageSize)
+	var totalPages int64 = 0
+	if pageSize > 0 {
+		totalPages = (totalRecords + int64(pageSize) - 1) / int64(pageSize)
+	}
 	return APIResponse{
 		Status:  http.StatusOK,
 		Message: "Successfully records fetched",

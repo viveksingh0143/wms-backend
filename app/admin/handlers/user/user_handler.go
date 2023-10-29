@@ -24,21 +24,14 @@ func NewUserHandler(s service.UserService) *Handler {
 // List users with filter, pagination, and sorting
 func (ph *Handler) List(c *gin.Context) {
 	var filter user.Filter
-	var pagination requests.Pagination
-	var sorting requests.Sorting
+	paginationValue, _ := c.Get("pagination")
+	pagination, _ := paginationValue.(requests.Pagination)
+
+	sortingValue, _ := c.Get("sorting")
+	sorting, _ := sortingValue.(requests.Sorting)
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		resp := responses.NewValidationErrorResponse(err, filter)
-		c.JSON(resp.Status, resp)
-		return
-	}
-	if err := c.ShouldBindQuery(&pagination); err != nil {
-		resp := responses.NewValidationErrorResponse(err, pagination)
-		c.JSON(resp.Status, resp)
-		return
-	}
-	if err := c.ShouldBindQuery(&sorting); err != nil {
-		resp := responses.NewValidationErrorResponse(err, sorting)
 		c.JSON(resp.Status, resp)
 		return
 	}
@@ -55,28 +48,33 @@ func (ph *Handler) List(c *gin.Context) {
 func (ph *Handler) Create(c *gin.Context) {
 	var userForm user.Form
 	if err := c.ShouldBindJSON(&userForm); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, userForm))
+		resp := responses.NewValidationErrorResponse(err, userForm)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	validate := validation.GetValidator()
 	if userForm.Plant != nil && userForm.Plant.ID == 0 {
 		userForm.Plant = nil
-	} else if userForm.Plant != nil {
-		if err := validate.Var(userForm.Plant.ID, "required,gt=0"); err != nil {
-			iErr := responses.NewInputError("plant.id", "invalid ID for Plant", userForm.Plant.ID)
-			c.JSON(http.StatusBadRequest, responses.NewErrorResponse(http.StatusBadRequest, "Invalid Plant ID format", iErr))
-			return
-		}
 	}
+	//if userForm.Plant != nil {
+	//	if err := validate.Var(userForm.Plant.ID, "required,gt=0"); err != nil {
+	//		iErr := responses.NewInputError("plant.id", "invalid ID for Plant", userForm.Plant.ID)
+	//		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid Plant ID format", iErr)
+	//		c.JSON(resp.Status, resp)
+	//		return
+	//	}
+	//}
 	if err := validate.Struct(userForm); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, userForm))
+		resp := responses.NewValidationErrorResponse(err, userForm)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	err := ph.service.CreateUser(&userForm)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err))
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "User created successfully"))
@@ -86,14 +84,15 @@ func (ph *Handler) Create(c *gin.Context) {
 func (ph *Handler) Get(c *gin.Context) {
 	id, err := requests.StringToUInt(c.Param("id"))
 	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err))
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	userDto, err := ph.service.GetUserByID(id)
 	if err != nil {
-		errResponse := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(errResponse.Status, errResponse)
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "User fetched successfully", userDto))
@@ -103,26 +102,33 @@ func (ph *Handler) Get(c *gin.Context) {
 func (ph *Handler) Update(c *gin.Context) {
 	id, err := requests.StringToUInt(c.Param("id"))
 	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err))
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	var userForm user.Form
 	if err := c.BindJSON(&userForm); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, userForm))
+		resp := responses.NewValidationErrorResponse(err, userForm)
+		c.JSON(resp.Status, resp)
 		return
+	}
+
+	if userForm.Plant != nil && userForm.Plant.ID == 0 {
+		userForm.Plant = nil
 	}
 
 	validate := validation.GetValidator()
 	if err := validate.StructExcept(userForm, "Password"); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, userForm))
+		resp := responses.NewValidationErrorResponse(err, userForm)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	err = ph.service.UpdateUser(id, &userForm)
 	if err != nil {
-		errResponse := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(errResponse.Status, errResponse)
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "User updated successfully"))
@@ -133,15 +139,16 @@ func (ph *Handler) Delete(c *gin.Context) {
 	idStr := c.Param("id") // assuming the ID is passed as a URL parameter
 	idInt, err := strconv.Atoi(idStr)
 	if err != nil || idInt < 0 {
-		c.JSON(http.StatusBadRequest, responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err))
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	id := uint(idInt)
 	err = ph.service.DeleteUser(id)
 	if err != nil {
-		errResponse := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(errResponse.Status, errResponse)
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "User deleted successfully"))
@@ -151,20 +158,22 @@ func (ph *Handler) Delete(c *gin.Context) {
 func (ph *Handler) DeleteBulk(c *gin.Context) {
 	var idsForm requests.RequestIDs
 	if err := c.ShouldBindJSON(&idsForm); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, idsForm))
+		resp := responses.NewValidationErrorResponse(err, idsForm)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	validate := validation.GetValidator()
 	if err := validate.Struct(idsForm); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewValidationErrorResponse(err, idsForm))
+		resp := responses.NewValidationErrorResponse(err, idsForm)
+		c.JSON(resp.Status, resp)
 		return
 	}
 
 	err := ph.service.DeleteUsers(idsForm.IDs)
 	if err != nil {
-		errResponse := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(errResponse.Status, errResponse)
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Users deleted successfully"))

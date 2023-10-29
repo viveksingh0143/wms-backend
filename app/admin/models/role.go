@@ -9,5 +9,5 @@ type Role struct {
 	models.MyModel
 	Name      string       `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Status    types.Status `gorm:"type:int;default:1"`
-	Abilities []*Ability   `gorm:"many2many:role_abilities;"`
+	Abilities []*Ability   `gorm:"many2many:role_abilities;constraint:OnDelete:CASCADE;"`
 }

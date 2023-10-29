@@ -4,7 +4,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
-	"star-wms/app/admin/models"
+	adminModels "star-wms/app/admin/models"
+	baseModels "star-wms/app/base/models"
 	"star-wms/configs"
 	"time"
 )
@@ -26,7 +27,7 @@ var databaseMigrateCmd = &cobra.Command{
 		}
 
 		err = db.AutoMigrate(
-			&models.Permission{}, &models.Ability{}, &models.Role{}, &models.Plant{}, &models.User{},
+			&adminModels.Permission{}, &adminModels.Ability{}, &adminModels.Role{}, &adminModels.Plant{}, &adminModels.User{}, baseModels.Category{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 

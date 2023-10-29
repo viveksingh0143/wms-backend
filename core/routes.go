@@ -7,6 +7,7 @@ import (
 	"star-wms/app/admin/handlers/role"
 	"star-wms/app/admin/handlers/user"
 	"star-wms/app/auth/handlers"
+	"star-wms/app/base/handlers/category"
 )
 
 func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
@@ -31,6 +32,11 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 				role.SetupRoleRoutes(adminRoutes, receiver.RoleHandler)
 				plant.SetupPlantRoutes(adminRoutes, receiver.PlantHandler)
 				user.SetupUserRoutes(adminRoutes, receiver.UserHandler)
+			}
+
+			baseRoutes := api.Group("/base")
+			{
+				category.SetupCategoryRoutes(baseRoutes, receiver.CategoryHandler)
 			}
 		}
 	}

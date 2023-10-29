@@ -11,47 +11,58 @@ import (
 	"star-wms/app/admin/handlers/plant"
 	"star-wms/app/admin/handlers/role"
 	"star-wms/app/admin/handlers/user"
-	"star-wms/app/admin/repository"
-	"star-wms/app/admin/service"
+	adminRepository "star-wms/app/admin/repository"
+	adminService "star-wms/app/admin/service"
 	authHandlers "star-wms/app/auth/handlers"
 	authServices "star-wms/app/auth/services"
+	"star-wms/app/base/handlers/category"
+	baseRepository "star-wms/app/base/repository"
+	baseService "star-wms/app/base/service"
 	"star-wms/configs"
+	"star-wms/core/middlewares"
 	"star-wms/core/validation"
 )
 
 type AppContainer struct {
 	DB                *gorm.DB
-	PermissionRepo    repository.PermissionRepository
-	PermissionService service.PermissionService
+	PermissionRepo    adminRepository.PermissionRepository
+	PermissionService adminService.PermissionService
 	PermissionHandler *permission.Handler
-	RoleRepo          repository.RoleRepository
-	RoleService       service.RoleService
+	RoleRepo          adminRepository.RoleRepository
+	RoleService       adminService.RoleService
 	RoleHandler       *role.Handler
-	PlantRepo         repository.PlantRepository
-	PlantService      service.PlantService
+	PlantRepo         adminRepository.PlantRepository
+	PlantService      adminService.PlantService
 	PlantHandler      *plant.Handler
-	UserRepo          repository.UserRepository
-	UserService       service.UserService
+	UserRepo          adminRepository.UserRepository
+	UserService       adminService.UserService
 	UserHandler       *user.Handler
+	CategoryRepo      baseRepository.CategoryRepository
+	CategoryService   baseService.CategoryService
+	CategoryHandler   *category.Handler
 	AuthHandler       *authHandlers.Handler
 }
 
 func NewAppContainer(db *gorm.DB) *AppContainer {
-	permissionRepo := repository.NewPermissionGormRepository(db)
-	permissionService := service.NewPermissionService(permissionRepo)
+	permissionRepo := adminRepository.NewPermissionGormRepository(db)
+	permissionService := adminService.NewPermissionService(permissionRepo)
 	permissionHandler := permission.NewPermissionHandler(permissionService)
 
-	roleRepo := repository.NewRoleGormRepository(db)
-	roleService := service.NewRoleService(roleRepo)
+	roleRepo := adminRepository.NewRoleGormRepository(db)
+	roleService := adminService.NewRoleService(roleRepo)
 	roleHandler := role.NewRoleHandler(roleService)
 
-	plantRepo := repository.NewPlantGormRepository(db)
-	plantService := service.NewPlantService(plantRepo)
+	plantRepo := adminRepository.NewPlantGormRepository(db)
+	plantService := adminService.NewPlantService(plantRepo)
 	plantHandler := plant.NewPlantHandler(plantService)
 
-	userRepo := repository.NewUserGormRepository(db)
-	userService := service.NewUserService(userRepo, roleService, plantService)
+	userRepo := adminRepository.NewUserGormRepository(db)
+	userService := adminService.NewUserService(userRepo, roleService, plantService)
 	userHandler := user.NewUserHandler(userService)
+
+	categoryRepo := baseRepository.NewCategoryGormRepository(db)
+	categoryService := baseService.NewCategoryService(categoryRepo)
+	categoryHandler := category.NewCategoryHandler(categoryService)
 
 	authService := authServices.NewAuthService(userRepo, roleService, plantService)
 	authHandler := authHandlers.NewAuthHandler(authService)
@@ -70,12 +81,16 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		UserRepo:          userRepo,
 		UserService:       userService,
 		UserHandler:       userHandler,
+		CategoryRepo:      categoryRepo,
+		CategoryService:   categoryService,
+		CategoryHandler:   categoryHandler,
 		AuthHandler:       authHandler,
 	}
 }
 
 func (receiver *AppContainer) RunServer() {
 	router := receiver.setupRouter()
+	router.Use(middlewares.PaginationMiddleware())
 	SetupRoutes(router, receiver)
 
 	log.Info().Msgf("Server started on %s:%d", configs.ServerCfg.Address, configs.ServerCfg.Port)

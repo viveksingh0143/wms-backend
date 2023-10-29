@@ -14,6 +14,6 @@ type User struct {
 	Password string       `gorm:"type:varchar(100);not null"`
 	Status   types.Status `gorm:"type:int;default:1"`
 	PlantID  *uint        `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	Roles    []*Role      `gorm:"many2many:user_roles;"`
+	Roles    []*Role      `gorm:"many2many:user_roles;constraint:OnDelete:CASCADE;"`
 	Plant    *Plant       `gorm:"foreignKey:PlantID"`
 }

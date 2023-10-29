@@ -24,21 +24,14 @@ func NewRoleHandler(s service.RoleService) *Handler {
 // List roles with filter, pagination, and sorting
 func (ph *Handler) List(c *gin.Context) {
 	var filter role.Filter
-	var pagination requests.Pagination
-	var sorting requests.Sorting
+	paginationValue, _ := c.Get("pagination")
+	pagination, _ := paginationValue.(requests.Pagination)
+
+	sortingValue, _ := c.Get("sorting")
+	sorting, _ := sortingValue.(requests.Sorting)
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		resp := responses.NewValidationErrorResponse(err, filter)
-		c.JSON(resp.Status, resp)
-		return
-	}
-	if err := c.ShouldBindQuery(&pagination); err != nil {
-		resp := responses.NewValidationErrorResponse(err, pagination)
-		c.JSON(resp.Status, resp)
-		return
-	}
-	if err := c.ShouldBindQuery(&sorting); err != nil {
-		resp := responses.NewValidationErrorResponse(err, sorting)
 		c.JSON(resp.Status, resp)
 		return
 	}

@@ -60,8 +60,7 @@ func ApplySorting(query *gorm.DB, sorting commonModels.Sorting) *gorm.DB {
 
 func ApplyPagination(query *gorm.DB, pagination commonModels.Pagination) *gorm.DB {
 	if pagination.PageSize > 0 {
-		offset := (pagination.Page - 1) * pagination.PageSize
-		query = query.Limit(pagination.PageSize).Offset(offset)
+		query = query.Limit(pagination.PageSize).Offset(pagination.Start)
 	}
 	return query
 }
