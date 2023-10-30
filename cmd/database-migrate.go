@@ -27,7 +27,7 @@ var databaseMigrateCmd = &cobra.Command{
 		}
 
 		err = db.AutoMigrate(
-			&adminModels.Permission{}, &adminModels.Ability{}, &adminModels.Role{}, &adminModels.Plant{}, &adminModels.User{}, baseModels.Category{},
+			&adminModels.Permission{}, &adminModels.Ability{}, &adminModels.Role{}, &adminModels.Plant{}, &adminModels.User{}, &baseModels.Category{}, &baseModels.Product{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 

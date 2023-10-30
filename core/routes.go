@@ -8,6 +8,7 @@ import (
 	"star-wms/app/admin/handlers/user"
 	"star-wms/app/auth/handlers"
 	"star-wms/app/base/handlers/category"
+	"star-wms/app/base/handlers/product"
 )
 
 func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
@@ -37,6 +38,7 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 			baseRoutes := api.Group("/base")
 			{
 				category.SetupCategoryRoutes(baseRoutes, receiver.CategoryHandler)
+				product.SetupProductRoutes(baseRoutes, receiver.ProductHandler)
 			}
 		}
 	}

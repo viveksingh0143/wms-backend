@@ -99,12 +99,14 @@ func (s *DefaultUserService) UpdateUser(id uint, userForm *user.Form) error {
 		return err
 	}
 	s.FormToModel(userForm, userModel)
-	hashedPassword, err := utils.GenerateFromPassword(userModel.Password)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to encrypt password")
-		return responses.NewInputError("password", "failed to encrypt", userModel.Password)
+	if userForm.Password != "" {
+		hashedPassword, err := utils.GenerateFromPassword(userForm.Password)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to encrypt password")
+			return responses.NewInputError("password", "failed to encrypt", userModel.Password)
+		}
+		userModel.Password = hashedPassword
 	}
-	userModel.Password = hashedPassword
 	return s.repo.Update(userModel)
 }
 
@@ -157,7 +159,6 @@ func (s *DefaultUserService) FormToModel(userForm *user.Form, userModel *models.
 	userModel.StaffID = userForm.StaffID
 	userModel.Username = userForm.Username
 	userModel.EMail = userForm.EMail
-	userModel.Password = userForm.Password
 	userModel.Status = userForm.Status
 
 	if userForm.Roles != nil {

@@ -16,6 +16,7 @@ import (
 	authHandlers "star-wms/app/auth/handlers"
 	authServices "star-wms/app/auth/services"
 	"star-wms/app/base/handlers/category"
+	"star-wms/app/base/handlers/product"
 	baseRepository "star-wms/app/base/repository"
 	baseService "star-wms/app/base/service"
 	"star-wms/configs"
@@ -40,6 +41,9 @@ type AppContainer struct {
 	CategoryRepo      baseRepository.CategoryRepository
 	CategoryService   baseService.CategoryService
 	CategoryHandler   *category.Handler
+	ProductRepo       baseRepository.ProductRepository
+	ProductService    baseService.ProductService
+	ProductHandler    *product.Handler
 	AuthHandler       *authHandlers.Handler
 }
 
@@ -64,6 +68,10 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 	categoryService := baseService.NewCategoryService(categoryRepo)
 	categoryHandler := category.NewCategoryHandler(categoryService)
 
+	productRepo := baseRepository.NewProductGormRepository(db)
+	productService := baseService.NewProductService(productRepo, categoryService)
+	productHandler := product.NewProductHandler(productService)
+
 	authService := authServices.NewAuthService(userRepo, roleService, plantService)
 	authHandler := authHandlers.NewAuthHandler(authService)
 
@@ -84,6 +92,9 @@ func NewAppContainer(db *gorm.DB) *AppContainer {
 		CategoryRepo:      categoryRepo,
 		CategoryService:   categoryService,
 		CategoryHandler:   categoryHandler,
+		ProductRepo:       productRepo,
+		ProductService:    productService,
+		ProductHandler:    productHandler,
 		AuthHandler:       authHandler,
 	}
 }
