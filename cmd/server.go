@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"star-wms/configs"
 	"star-wms/core"
+	"star-wms/plugins/cache"
 	"time"
 )
 
@@ -27,7 +28,13 @@ var serverCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal().Msgf("Failed to connect to database: %v", err)
 		}
-		appContainer := core.NewAppContainer(db)
+
+		cacheManager, err := cache.NewCacheManager()
+		if err != nil {
+			log.Fatal().Msgf("Failed to create cache manager: %v", err)
+		}
+
+		appContainer := core.NewAppContainer(db, cacheManager)
 		appContainer.RunServer()
 	},
 }

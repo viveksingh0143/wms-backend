@@ -57,14 +57,6 @@ func (ph *Handler) Create(c *gin.Context) {
 	if userForm.Plant != nil && userForm.Plant.ID == 0 {
 		userForm.Plant = nil
 	}
-	//if userForm.Plant != nil {
-	//	if err := validate.Var(userForm.Plant.ID, "required,gt=0"); err != nil {
-	//		iErr := responses.NewInputError("plant.id", "invalid ID for Plant", userForm.Plant.ID)
-	//		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid Plant ID format", iErr)
-	//		c.JSON(resp.Status, resp)
-	//		return
-	//	}
-	//}
 	if err := validate.Struct(userForm); err != nil {
 		resp := responses.NewValidationErrorResponse(err, userForm)
 		c.JSON(resp.Status, resp)

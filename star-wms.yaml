@@ -11,7 +11,7 @@ logger:
   max-age: 30
   compress: true
 auth:
-  expiry-duration: 300
+  expiry-duration: 72000
   expiry-long-duration: 86400
   refresh-expiry-duration: 20
   refresh-expiry-long-duration: 2592000
@@ -28,3 +28,7 @@ database:
   dbname: brandnewwms
   timezone: Asia/Kolkata
   show-query: true
+cache:
+  type: "in_memory" # could be "in_memory" or "no_cache" or "redis"
+  redis:
+    server: "localhost:6379"

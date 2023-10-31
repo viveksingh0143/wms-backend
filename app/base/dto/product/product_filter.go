@@ -12,6 +12,6 @@ type Filter struct {
 	Slug        string       `form:"slug" db:"slug" binding:"omitempty,max=100"`                                              // Filters by Slug, max length 100
 	Code        string       `form:"code" db:"code" binding:"omitempty,max=100"`                                              // Filters by Code, max length 100
 	CmsCode     string       `form:"cms_code" db:"cms_code" binding:"omitempty,max=100"`                                      // Filters by CmsCode, max length 100
-	CategoryID  uint         `form:"category_id" db:"catgory_id" binding:"omitempty,gt=0"`                                    // Filters by CategoryID
+	CategoryID  uint         `form:"category_id" db:"category_id" binding:"omitempty,gt=0"`                                   // Filters by CategoryID
 	Status      types.Status `form:"status" db:"status" binding:"omitempty,gt=0"`                                             // Filters by Status, should be greater than 0
 }

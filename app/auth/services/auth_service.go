@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
 	"star-wms/app/admin/dto/role"
@@ -14,6 +15,7 @@ import (
 	"star-wms/core/common/responses"
 	"star-wms/core/types"
 	"star-wms/core/utils"
+	"star-wms/plugins/cache"
 	"strconv"
 	"time"
 )
@@ -26,6 +28,7 @@ type AuthService interface {
 	ToForm(userModel *models.User) *user.Form
 	GenerateAccessToken(userForm *user.Form, expireLong bool) (string, error)
 	GenerateRefreshToken(userForm *user.Form, expireLong bool) (string, error)
+	ParseAccessToken(accessToken string) (uint, *jwt.RegisteredClaims, error)
 	ParseRefreshToken(refreshToken string) (uint, *dto.CustomRefreshClaims, error)
 }
 
@@ -33,21 +36,36 @@ type DefaultAuthService struct {
 	repo         repository.UserRepository
 	roleService  service.RoleService
 	plantService service.PlantService
+	cacheManager *cache.Manager
 }
 
-func NewAuthService(repo repository.UserRepository, roleService service.RoleService, plantService service.PlantService) AuthService {
-	return &DefaultAuthService{repo: repo, roleService: roleService, plantService: plantService}
+func NewAuthService(repo repository.UserRepository, roleService service.RoleService, plantService service.PlantService, cahceManager *cache.Manager) AuthService {
+	return &DefaultAuthService{repo: repo, roleService: roleService, plantService: plantService, cacheManager: cahceManager}
 }
 
 func (s *DefaultAuthService) GetUserByID(id uint) (*user.Form, error) {
-	userData, err := s.repo.GetLoginInfoByField("id", id)
-	if err != nil {
-		return nil, responses.NewInputError("id", "no user found", nil)
+	target := &user.Form{}
+	cacheKey := cache.GetUserPattern(id)
+	cachedData, exists := s.cacheManager.GetOrCreateTarget(cacheKey, func() interface{} {
+		userData, err := s.repo.GetLoginInfoByField("id", id)
+		if err != nil {
+			return nil
+		}
+		if userData.Status != types.StatusActive {
+			return nil
+		}
+		return s.ToForm(userData)
+	}, target)
+
+	if !exists || cachedData == nil {
+		return nil, responses.NewInputError("id", "no user found or user is not active", nil)
 	}
-	if userData.Status != types.StatusActive {
-		return nil, responses.NewInputError("id", "account is not active", nil)
+
+	if userData, ok := cachedData.(*user.Form); ok {
+		return userData, nil
 	}
-	return s.ToForm(userData), nil
+
+	return nil, fmt.Errorf("unexpected error: cached data is of unknown type")
 }
 
 func (s *DefaultAuthService) GetUserByUsername(username string, password string) (*user.Form, error) {
@@ -157,6 +175,24 @@ func (s *DefaultAuthService) GenerateRefreshToken(userForm *user.Form, expireLon
 		return "", err
 	}
 	return signedToken, nil
+}
+
+func (s *DefaultAuthService) ParseAccessToken(accessToken string) (uint, *jwt.RegisteredClaims, error) {
+	claims := &jwt.RegisteredClaims{}
+	tkn, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(configs.AuthCfg.SecretKey), nil
+	})
+	if err != nil || !tkn.Valid {
+		log.Error().Err(err).Msg("Invalid/Expired access token")
+		return 0, nil, errors.New("given token is Invalid or Expired")
+	}
+	uint64Val, err := strconv.ParseUint(claims.Subject, 10, 64)
+	if err != nil {
+		log.Error().Err(err).Msg("Access token has invalid user information")
+		return 0, nil, errors.New("given access token has invalid user information ")
+	}
+
+	return uint(uint64Val), claims, nil
 }
 
 func (s *DefaultAuthService) ParseRefreshToken(refreshToken string) (uint, *dto.CustomRefreshClaims, error) {

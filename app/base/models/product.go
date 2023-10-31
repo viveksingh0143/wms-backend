@@ -26,24 +26,19 @@ type UnitType string
 type UnitValue string
 
 const (
-	// Product Types
-	RAW_MATERIAL_TYPE        ProductType = "RAW MATERIAL"
-	FINISHED_GOODS_TYPE      ProductType = "FINISHED GOODS"
-	SEMI_FINISHED_GOODS_TYPE ProductType = "SEMI FINISHED GOODS"
+	TypeRawMaterial       ProductType = "RAW MATERIAL"
+	TypeFinishedGoods     ProductType = "FINISHED GOODS"
+	TypeSemiFinishedGoods ProductType = "SEMI FINISHED GOODS"
 
-	// Unit Types
 	UnitTypeWeight UnitType = "WEIGHT"
 	UnitTypePiece  UnitType = "PIECE"
 	UnitTypeLiquid UnitType = "LIQUID"
 
-	// Unit Values for UnitTypeWeight
 	UnitValueKilogram UnitValue = "Kilogram"
 	UnitValueGram     UnitValue = "Gram"
 
-	// Unit Values for UnitTypeLiquid
 	UnitValueLiter      UnitValue = "Liter"
 	UnitValueMilliliter UnitValue = "Milliliter"
 
-	// Unit Values for UnitTypePiece
 	UnitValuePiece UnitValue = "Piece"
 )

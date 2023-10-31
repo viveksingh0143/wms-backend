@@ -9,9 +9,12 @@ import (
 	"star-wms/app/auth/handlers"
 	"star-wms/app/base/handlers/category"
 	"star-wms/app/base/handlers/product"
+	"star-wms/app/base/handlers/store"
+	"star-wms/core/middlewares"
 )
 
 func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
+
 	api := r.Group("/api")
 	{
 		v1 := api.Group("/v1")
@@ -27,7 +30,7 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 				handlers.SetupAuthRoutes(authRoutes, receiver.AuthHandler)
 			}
 
-			adminRoutes := api.Group("/admin")
+			adminRoutes := api.Group("/admin", middlewares.AuthRequiredMiddleware(receiver.AuthService))
 			{
 				permission.SetupPermissionRoutes(adminRoutes, receiver.PermissionHandler)
 				role.SetupRoleRoutes(adminRoutes, receiver.RoleHandler)
@@ -35,10 +38,14 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 				user.SetupUserRoutes(adminRoutes, receiver.UserHandler)
 			}
 
-			baseRoutes := api.Group("/base")
+			baseRoutes := api.Group("/base", middlewares.AuthRequiredMiddleware(receiver.AuthService))
 			{
 				category.SetupCategoryRoutes(baseRoutes, receiver.CategoryHandler)
-				product.SetupProductRoutes(baseRoutes, receiver.ProductHandler)
+				plantBasedRoutes := baseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
+				{
+					product.SetupProductRoutes(plantBasedRoutes, receiver.ProductHandler)
+					store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler)
+				}
 			}
 		}
 	}
