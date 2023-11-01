@@ -9,7 +9,8 @@ import (
 	"star-wms/app/auth/handlers"
 	"star-wms/app/base/handlers/category"
 	"star-wms/app/base/handlers/container"
-	"star-wms/app/base/handlers/machine"
+	machine "star-wms/app/base/handlers/customer"
+	customer "star-wms/app/base/handlers/machine"
 	"star-wms/app/base/handlers/product"
 	"star-wms/app/base/handlers/store"
 	"star-wms/core/middlewares"
@@ -49,6 +50,7 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 					store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler)
 					container.SetupContainerRoutes(plantBasedRoutes, receiver.ContainerHandler)
 					machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
+					customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)
 				}
 			}
 		}
