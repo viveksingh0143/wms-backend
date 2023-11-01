@@ -36,6 +36,7 @@ var databaseMigrateCmd = &cobra.Command{
 			&baseModels.Product{},
 			&baseModels.Store{},
 			&baseModels.Container{},
+			&baseModels.Machine{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 

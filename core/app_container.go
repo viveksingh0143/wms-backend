@@ -17,6 +17,7 @@ import (
 	authServices "star-wms/app/auth/services"
 	"star-wms/app/base/handlers/category"
 	"star-wms/app/base/handlers/container"
+	"star-wms/app/base/handlers/machine"
 	"star-wms/app/base/handlers/product"
 	"star-wms/app/base/handlers/store"
 	baseRepository "star-wms/app/base/repository"
@@ -53,6 +54,9 @@ type AppContainer struct {
 	ContainerRepo     baseRepository.ContainerRepository
 	ContainerService  baseService.ContainerService
 	ContainerHandler  *container.Handler
+	MachineRepo       baseRepository.MachineRepository
+	MachineService    baseService.MachineService
+	MachineHandler    *machine.Handler
 	AuthService       authServices.AuthService
 	AuthHandler       *authHandlers.Handler
 	CacheManager      *cache.Manager
@@ -91,6 +95,10 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	containerService := baseService.NewContainerService(containerRepo, storeService, productService)
 	containerHandler := container.NewContainerHandler(containerService)
 
+	machineRepo := baseRepository.NewMachineGormRepository(db)
+	machineService := baseService.NewMachineService(machineRepo)
+	machineHandler := machine.NewMachineHandler(machineService)
+
 	authService := authServices.NewAuthService(userRepo, roleService, plantService, cacheManager)
 	authHandler := authHandlers.NewAuthHandler(authService)
 
@@ -120,6 +128,9 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		ContainerRepo:     containerRepo,
 		ContainerService:  containerService,
 		ContainerHandler:  containerHandler,
+		MachineRepo:       machineRepo,
+		MachineService:    machineService,
+		MachineHandler:    machineHandler,
 		AuthService:       authService,
 		AuthHandler:       authHandler,
 		CacheManager:      cacheManager,
