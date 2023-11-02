@@ -34,6 +34,7 @@ var databaseMigrateCmd = &cobra.Command{
 			&adminModels.User{},
 			&baseModels.Category{},
 			&baseModels.Product{},
+			&baseModels.ProductIngredient{},
 			&baseModels.Store{},
 			&baseModels.Container{},
 			&baseModels.Machine{},

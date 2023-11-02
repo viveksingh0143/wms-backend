@@ -30,6 +30,9 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				if whereTypeTag == "like" {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s LIKE ?", tag))
 					orQueryValues = append(orQueryValues, "%"+fmt.Sprintf("%v", value)+"%")
+				} else if whereTypeTag == "ne" {
+					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s != ?", tag))
+					orQueryValues = append(orQueryValues, value)
 				} else {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s = ?", tag))
 					orQueryValues = append(orQueryValues, value)
@@ -39,6 +42,8 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 		} else {
 			if whereTypeTag == "like" {
 				query = query.Where(fmt.Sprintf("%s LIKE ?", dbTag), "%"+fmt.Sprintf("%v", value)+"%")
+			} else if whereTypeTag == "ne" {
+				query = query.Where(fmt.Sprintf("%s != ?", dbTag), value)
 			} else {
 				query = query.Where(fmt.Sprintf("%s = ?", dbTag), value)
 			}

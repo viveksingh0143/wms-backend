@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"star-wms/app/base/dto/product"
 	"star-wms/app/base/models"
 	commonModels "star-wms/core/common/requests"
@@ -45,8 +46,7 @@ func (p *ProductGormRepository) GetAll(filter product.Filter, pagination commonM
 
 	query = utils.ApplySorting(query, sorting)
 	query = utils.ApplyPagination(query, pagination)
-
-	if err := query.Preload("Category").Find(&products).Error; err != nil {
+	if err := query.Preload("Ingredients.Ingredient").Preload("Category").Find(&products).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to get all products")
 		return nil, 0, err
 	}
@@ -66,7 +66,13 @@ func (p *ProductGormRepository) Create(productModel *models.Product) error {
 			}
 			productModel.Category = category
 		}
-		if err := tx.Create(&productModel).Error; err != nil {
+		if err := tx.Omit("Ingredients").Create(&productModel).Error; err != nil {
+			return err
+		}
+		for _, ingredient := range productModel.Ingredients {
+			ingredient.ProductID = productModel.ID
+		}
+		if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
 			return err
 		}
 		return nil
@@ -79,7 +85,7 @@ func (p *ProductGormRepository) Create(productModel *models.Product) error {
 
 func (p *ProductGormRepository) GetByID(id uint) (*models.Product, error) {
 	var productModel *models.Product
-	if err := p.db.Preload("Category").First(&productModel, id).Error; err != nil {
+	if err := p.db.Preload("Ingredients.Ingredient").Preload("Category").First(&productModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get product by ID")
 		return nil, err
 	}
@@ -98,7 +104,16 @@ func (p *ProductGormRepository) Update(productModel *models.Product) error {
 			}
 			productModel.Category = category
 		}
-		if err := tx.Save(&productModel).Error; err != nil {
+		if err := tx.Where("product_id = ?", productModel.ID).Delete(&models.ProductIngredient{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Omit("Ingredients").Save(&productModel).Error; err != nil {
+			return err
+		}
+		for _, ingredient := range productModel.Ingredients {
+			ingredient.ProductID = productModel.ID
+		}
+		if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
 			return err
 		}
 		return nil

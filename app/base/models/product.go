@@ -19,6 +19,7 @@ type Product struct {
 	Status      types.Status `gorm:"type:int;default:1"`
 	CategoryID  *uint        `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Category    *Category    `gorm:"foreignKey:CategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Ingredients []*ProductIngredient
 }
 
 type ProductType string

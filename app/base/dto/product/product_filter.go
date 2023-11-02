@@ -6,6 +6,7 @@ import (
 
 type Filter struct {
 	Query       string       `form:"query" db:"name,product_type,code,cms_code" whereType:"like" binding:"omitempty,max=100"` // Filters by Name, ProductType, Code, CmsCode, max length 100
+	IDNotEqual  uint         `form:"id_ne" db:"id" whereType:"ne" binding:"omitempty,gt=0"`                                   // Filters by ID, should be greater than 0
 	ID          uint         `form:"id" db:"id" binding:"omitempty,gt=0"`                                                     // Filters by ID, should be greater than 0
 	ProductType string       `form:"product_type" db:"product_type" binding:"omitempty,max=100"`                              // Filters by ProductType, max length 100
 	Name        string       `form:"name" db:"name" binding:"omitempty,max=100"`                                              // Filters by Name, max length 100

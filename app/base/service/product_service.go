@@ -146,6 +146,10 @@ func (s *DefaultProductService) ToModel(productForm *product.Form) *models.Produ
 	if productForm.Category != nil {
 		productModel.Category = s.categoryService.ToModel(productForm.Category)
 	}
+
+	if productForm.Ingredients != nil {
+		productModel.Ingredients = s.ToIngredientModelSlice(productForm.Ingredients)
+	}
 	return productModel
 }
 
@@ -167,6 +171,11 @@ func (s *DefaultProductService) FormToModel(productForm *product.Form, productMo
 		productModel.Category = nil
 		productModel.CategoryID = nil
 	}
+	if productForm.Ingredients != nil {
+		productModel.Ingredients = s.ToIngredientModelSlice(productForm.Ingredients)
+	} else {
+		productModel.Ingredients = make([]*models.ProductIngredient, 0)
+	}
 }
 
 func (s *DefaultProductService) ToForm(productModel *models.Product) *product.Form {
@@ -186,6 +195,7 @@ func (s *DefaultProductService) ToForm(productModel *models.Product) *product.Fo
 	if productModel.Category != nil {
 		productForm.Category = s.categoryService.ToForm(productModel.Category)
 	}
+	productForm.Ingredients = s.ToIngredientFormSlice(productModel.Ingredients)
 	return productForm
 }
 
@@ -204,3 +214,90 @@ func (s *DefaultProductService) ToModelSlice(productForms []*product.Form) []*mo
 	}
 	return data
 }
+
+func (s *DefaultProductService) ToIngredientForm(ingredientModel *models.ProductIngredient) *product.IngredientForm {
+	ingredientForm := &product.IngredientForm{
+		IngredientID: ingredientModel.IngredientID,
+		Ingredient:   s.ToForm(ingredientModel.Ingredient),
+		Quantity:     ingredientModel.Quantity,
+	}
+	return ingredientForm
+}
+
+func (s *DefaultProductService) ToIngredientFormSlice(ingredientModels []*models.ProductIngredient) []*product.IngredientForm {
+	data := make([]*product.IngredientForm, 0)
+	for _, ingredientModel := range ingredientModels {
+		data = append(data, s.ToIngredientForm(ingredientModel))
+	}
+	return data
+}
+
+func (s *DefaultProductService) ToIngredientModel(ingredientForm *product.IngredientForm) *models.ProductIngredient {
+	ingredientProduct := &models.Product{}
+	ingredientProduct.ID = ingredientForm.IngredientID
+	ingredientModel := &models.ProductIngredient{
+		IngredientID: ingredientProduct.ID,
+		Ingredient:   ingredientProduct,
+		Quantity:     ingredientForm.Quantity,
+	}
+	return ingredientModel
+}
+
+func (s *DefaultProductService) ToIngredientModelSlice(ingredientForms []*product.IngredientForm) []*models.ProductIngredient {
+	data := make([]*models.ProductIngredient, 0)
+	for _, ingredientForm := range ingredientForms {
+		data = append(data, s.ToIngredientModel(ingredientForm))
+	}
+	return data
+}
+
+//
+//func (s *DefaultProductService) IngredientFormToModel(ingredientForm *product.Form, ingredientModel *models.ProductIngredient) {
+//	ingredientProduct := &models.Product{}
+//	ingredientProduct.ID = ingredientForm.IngredientID
+//
+//	ingredientModel := &models.ProductIngredient{
+//		ProductID:    productID,
+//		IngredientID: ingredientForm.IngredientID,
+//		Ingredient:   ingredientProduct,
+//		Quantity:     ingredientForm.Quantity,
+//	}
+//	ingredientModel.ID = ingredientForm.ID
+//	return ingredientModel
+//}
+//
+//func (s *DefaultProductService) ToForm(productModel *models.Product) *product.Form {
+//	ingredientsForm := &product.Form{
+//		ID:          productModel.ID,
+//		ProductType: string(productModel.ProductType),
+//		Name:        productModel.Name,
+//		Slug:        productModel.Slug,
+//		Code:        productModel.Code,
+//		CmsCode:     productModel.CmsCode,
+//		Description: productModel.Description,
+//		UnitType:    string(productModel.UnitType),
+//		UnitWeight:  productModel.UnitWeight,
+//		UnitValue:   string(productModel.UnitValue),
+//		Status:      productModel.Status,
+//	}
+//	if productModel.Category != nil {
+//		ingredientsForm.Category = s.categoryService.ToForm(productModel.Category)
+//	}
+//	return ingredientsForm
+//}
+//
+//func (s *DefaultProductService) ToFormSlice(productModels []*models.Product) []*product.Form {
+//	data := make([]*product.Form, 0)
+//	for _, productModel := range productModels {
+//		data = append(data, s.ToForm(productModel))
+//	}
+//	return data
+//}
+//
+//func (s *DefaultProductService) ToModelSlice(ingredientsForms []*product.Form) []*models.Product {
+//	data := make([]*models.Product, 0)
+//	for _, ingredientsForm := range ingredientsForms {
+//		data = append(data, s.ToModel(ingredientsForm))
+//	}
+//	return data
+//}
