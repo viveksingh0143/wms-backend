@@ -17,8 +17,9 @@ import (
 	authServices "star-wms/app/auth/services"
 	"star-wms/app/base/handlers/category"
 	"star-wms/app/base/handlers/container"
-	machine "star-wms/app/base/handlers/customer"
-	customer "star-wms/app/base/handlers/machine"
+	"star-wms/app/base/handlers/customer"
+	"star-wms/app/base/handlers/joborder"
+	"star-wms/app/base/handlers/machine"
 	"star-wms/app/base/handlers/product"
 	"star-wms/app/base/handlers/store"
 	baseRepository "star-wms/app/base/repository"
@@ -61,6 +62,9 @@ type AppContainer struct {
 	CustomerRepo      baseRepository.CustomerRepository
 	CustomerService   baseService.CustomerService
 	CustomerHandler   *customer.Handler
+	JobOrderRepo      baseRepository.JobOrderRepository
+	JobOrderService   baseService.JobOrderService
+	JobOrderHandler   *joborder.Handler
 	AuthService       authServices.AuthService
 	AuthHandler       *authHandlers.Handler
 	CacheManager      *cache.Manager
@@ -107,6 +111,10 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	customerService := baseService.NewCustomerService(customerRepo)
 	customerHandler := customer.NewCustomerHandler(customerService)
 
+	joborderRepo := baseRepository.NewJobOrderGormRepository(db)
+	joborderService := baseService.NewJobOrderService(joborderRepo, customerService, productService)
+	joborderHandler := joborder.NewJobOrderHandler(joborderService)
+
 	authService := authServices.NewAuthService(userRepo, roleService, plantService, cacheManager)
 	authHandler := authHandlers.NewAuthHandler(authService)
 
@@ -142,6 +150,9 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		CustomerRepo:      customerRepo,
 		CustomerService:   customerService,
 		CustomerHandler:   customerHandler,
+		JobOrderRepo:      joborderRepo,
+		JobOrderService:   joborderService,
+		JobOrderHandler:   joborderHandler,
 		AuthService:       authService,
 		AuthHandler:       authHandler,
 		CacheManager:      cacheManager,
