@@ -98,10 +98,11 @@ func (s *DefaultJobOrderService) ExistsByOrderNo(plantID uint, orderNo string, I
 
 func (s *DefaultJobOrderService) ToModel(plantID uint, joborderForm *joborder.Form) *models.JobOrder {
 	joborderModel := &models.JobOrder{
-		IssuedDate: joborderForm.IssuedDate,
-		OrderNo:    joborderForm.OrderNo,
-		POCategory: models.POCategory(joborderForm.POCategory),
-		Status:     joborderForm.Status,
+		IssuedDate:    joborderForm.IssuedDate,
+		OrderNo:       joborderForm.OrderNo,
+		POCategory:    models.POCategory(joborderForm.POCategory),
+		Status:        joborderForm.Status,
+		ProcessStatus: joborderForm.ProcessStatus,
 	}
 	joborderModel.ID = joborderForm.ID
 
@@ -120,6 +121,7 @@ func (s *DefaultJobOrderService) FormToModel(plantID uint, joborderForm *joborde
 	joborderModel.OrderNo = joborderForm.OrderNo
 	joborderModel.POCategory = models.POCategory(joborderForm.POCategory)
 	joborderModel.Status = joborderForm.Status
+	joborderModel.ProcessStatus = joborderForm.ProcessStatus
 
 	if joborderForm.Customer != nil {
 		joborderModel.Customer = s.customerService.ToModel(plantID, joborderForm.Customer)
@@ -136,11 +138,12 @@ func (s *DefaultJobOrderService) FormToModel(plantID uint, joborderForm *joborde
 
 func (s *DefaultJobOrderService) ToForm(plantID uint, joborderModel *models.JobOrder) *joborder.Form {
 	joborderForm := &joborder.Form{
-		ID:         joborderModel.ID,
-		IssuedDate: joborderModel.IssuedDate,
-		OrderNo:    joborderModel.OrderNo,
-		POCategory: string(joborderModel.POCategory),
-		Status:     joborderModel.Status,
+		ID:            joborderModel.ID,
+		IssuedDate:    joborderModel.IssuedDate,
+		OrderNo:       joborderModel.OrderNo,
+		POCategory:    string(joborderModel.POCategory),
+		Status:        joborderModel.Status,
+		ProcessStatus: joborderModel.ProcessStatus,
 	}
 	if joborderModel.Customer != nil {
 		joborderForm.Customer = s.customerService.ToForm(plantID, joborderModel.Customer)
