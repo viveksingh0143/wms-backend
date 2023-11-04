@@ -86,7 +86,7 @@ func (ph *Handler) Get(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	id, err := requests.StringToUInt(c.Param("id"))
+	id, err := requests.StringToUInt(c.Param("storeID"))
 	if err != nil || id <= 0 {
 		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)
 		c.JSON(resp.Status, resp)
@@ -107,7 +107,7 @@ func (ph *Handler) Update(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	id, err := requests.StringToUInt(c.Param("id"))
+	id, err := requests.StringToUInt(c.Param("storeID"))
 	if err != nil || id <= 0 {
 		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)
 		c.JSON(resp.Status, resp)
@@ -146,7 +146,7 @@ func (ph *Handler) Delete(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	idStr := c.Param("id") // assuming the ID is passed as a URL parameter
+	idStr := c.Param("storeID") // assuming the ID is passed as a URL parameter
 	idInt, err := strconv.Atoi(idStr)
 	if err != nil || idInt < 0 {
 		resp := responses.NewErrorResponse(http.StatusBadRequest, "Invalid ID format", err)

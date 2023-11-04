@@ -50,7 +50,7 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 				plantBasedRoutes := baseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
 				{
 					product.SetupProductRoutes(plantBasedRoutes, receiver.ProductHandler)
-					store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler)
+					store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler, receiver.StorelocationHandler)
 					container.SetupContainerRoutes(plantBasedRoutes, receiver.ContainerHandler)
 					machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
 					customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)

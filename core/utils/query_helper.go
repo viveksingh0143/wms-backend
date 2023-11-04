@@ -47,7 +47,7 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 					orQueryValues = append(orQueryValues, value)
 				}
 			}
-			query = query.Or(strings.Join(orQueryStrings, " OR "), orQueryValues...)
+			query = query.Where(strings.Join(orQueryStrings, " OR "), orQueryValues...)
 		} else {
 			if whereTypeTag == "startswith" {
 				query = query.Where(fmt.Sprintf("%s LIKE ?", dbTag), fmt.Sprintf("%v", value)+"%")

@@ -22,6 +22,7 @@ import (
 	"star-wms/app/base/handlers/machine"
 	"star-wms/app/base/handlers/product"
 	"star-wms/app/base/handlers/store"
+	"star-wms/app/base/handlers/storelocation"
 	baseRepository "star-wms/app/base/repository"
 	baseService "star-wms/app/base/service"
 	"star-wms/app/warehouse/handlers/batchlabel"
@@ -35,49 +36,52 @@ import (
 )
 
 type AppContainer struct {
-	DB                *gorm.DB
-	PermissionRepo    adminRepository.PermissionRepository
-	PermissionService adminService.PermissionService
-	PermissionHandler *permission.Handler
-	RoleRepo          adminRepository.RoleRepository
-	RoleService       adminService.RoleService
-	RoleHandler       *role.Handler
-	PlantRepo         adminRepository.PlantRepository
-	PlantService      adminService.PlantService
-	PlantHandler      *plant.Handler
-	UserRepo          adminRepository.UserRepository
-	UserService       adminService.UserService
-	UserHandler       *user.Handler
-	CategoryRepo      baseRepository.CategoryRepository
-	CategoryService   baseService.CategoryService
-	CategoryHandler   *category.Handler
-	ProductRepo       baseRepository.ProductRepository
-	ProductService    baseService.ProductService
-	ProductHandler    *product.Handler
-	StoreRepo         baseRepository.StoreRepository
-	StoreService      baseService.StoreService
-	StoreHandler      *store.Handler
-	ContainerRepo     baseRepository.ContainerRepository
-	ContainerService  baseService.ContainerService
-	ContainerHandler  *container.Handler
-	MachineRepo       baseRepository.MachineRepository
-	MachineService    baseService.MachineService
-	MachineHandler    *machine.Handler
-	CustomerRepo      baseRepository.CustomerRepository
-	CustomerService   baseService.CustomerService
-	CustomerHandler   *customer.Handler
-	JoborderRepo      baseRepository.JoborderRepository
-	JoborderService   baseService.JoborderService
-	JoborderHandler   *joborder.Handler
-	BatchlabelRepo    warehouseRepository.BatchlabelRepository
-	BatchlabelService warehouseService.BatchlabelService
-	BatchlabelHandler *batchlabel.Handler
-	InventoryRepo     warehouseRepository.InventoryRepository
-	InventoryService  warehouseService.InventoryService
-	InventoryHandler  *inventory.Handler
-	AuthService       authServices.AuthService
-	AuthHandler       *authHandlers.Handler
-	CacheManager      *cache.Manager
+	DB                   *gorm.DB
+	PermissionRepo       adminRepository.PermissionRepository
+	PermissionService    adminService.PermissionService
+	PermissionHandler    *permission.Handler
+	RoleRepo             adminRepository.RoleRepository
+	RoleService          adminService.RoleService
+	RoleHandler          *role.Handler
+	PlantRepo            adminRepository.PlantRepository
+	PlantService         adminService.PlantService
+	PlantHandler         *plant.Handler
+	UserRepo             adminRepository.UserRepository
+	UserService          adminService.UserService
+	UserHandler          *user.Handler
+	CategoryRepo         baseRepository.CategoryRepository
+	CategoryService      baseService.CategoryService
+	CategoryHandler      *category.Handler
+	ProductRepo          baseRepository.ProductRepository
+	ProductService       baseService.ProductService
+	ProductHandler       *product.Handler
+	StoreRepo            baseRepository.StoreRepository
+	StoreService         baseService.StoreService
+	StoreHandler         *store.Handler
+	ContainerRepo        baseRepository.ContainerRepository
+	ContainerService     baseService.ContainerService
+	ContainerHandler     *container.Handler
+	StorelocationRepo    baseRepository.StorelocationRepository
+	StorelocationService baseService.StorelocationService
+	StorelocationHandler *storelocation.Handler
+	MachineRepo          baseRepository.MachineRepository
+	MachineService       baseService.MachineService
+	MachineHandler       *machine.Handler
+	CustomerRepo         baseRepository.CustomerRepository
+	CustomerService      baseService.CustomerService
+	CustomerHandler      *customer.Handler
+	JoborderRepo         baseRepository.JoborderRepository
+	JoborderService      baseService.JoborderService
+	JoborderHandler      *joborder.Handler
+	BatchlabelRepo       warehouseRepository.BatchlabelRepository
+	BatchlabelService    warehouseService.BatchlabelService
+	BatchlabelHandler    *batchlabel.Handler
+	InventoryRepo        warehouseRepository.InventoryRepository
+	InventoryService     warehouseService.InventoryService
+	InventoryHandler     *inventory.Handler
+	AuthService          authServices.AuthService
+	AuthHandler          *authHandlers.Handler
+	CacheManager         *cache.Manager
 }
 
 func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
@@ -113,6 +117,10 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	containerService := baseService.NewContainerService(containerRepo, storeService, productService)
 	containerHandler := container.NewContainerHandler(containerService)
 
+	storelocationRepo := baseRepository.NewStorelocationGormRepository(db)
+	storelocationService := baseService.NewStorelocationService(storelocationRepo, storeService)
+	storelocationHandler := storelocation.NewStorelocationHandler(storelocationService)
+
 	machineRepo := baseRepository.NewMachineGormRepository(db)
 	machineService := baseService.NewMachineService(machineRepo)
 	machineHandler := machine.NewMachineHandler(machineService)
@@ -137,49 +145,52 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	authHandler := authHandlers.NewAuthHandler(authService)
 
 	return &AppContainer{
-		DB:                db,
-		PermissionRepo:    permissionRepo,
-		PermissionService: permissionService,
-		PermissionHandler: permissionHandler,
-		RoleRepo:          roleRepo,
-		RoleService:       roleService,
-		RoleHandler:       roleHandler,
-		PlantRepo:         plantRepo,
-		PlantService:      plantService,
-		PlantHandler:      plantHandler,
-		UserRepo:          userRepo,
-		UserService:       userService,
-		UserHandler:       userHandler,
-		CategoryRepo:      categoryRepo,
-		CategoryService:   categoryService,
-		CategoryHandler:   categoryHandler,
-		ProductRepo:       productRepo,
-		ProductService:    productService,
-		ProductHandler:    productHandler,
-		StoreRepo:         storeRepo,
-		StoreService:      storeService,
-		StoreHandler:      storeHandler,
-		ContainerRepo:     containerRepo,
-		ContainerService:  containerService,
-		ContainerHandler:  containerHandler,
-		MachineRepo:       machineRepo,
-		MachineService:    machineService,
-		MachineHandler:    machineHandler,
-		CustomerRepo:      customerRepo,
-		CustomerService:   customerService,
-		CustomerHandler:   customerHandler,
-		JoborderRepo:      joborderRepo,
-		JoborderService:   joborderService,
-		JoborderHandler:   joborderHandler,
-		BatchlabelRepo:    batchlabelRepo,
-		BatchlabelService: batchlabelService,
-		BatchlabelHandler: batchlabelHandler,
-		InventoryRepo:     inventoryRepo,
-		InventoryService:  inventoryService,
-		InventoryHandler:  inventoryHandler,
-		AuthService:       authService,
-		AuthHandler:       authHandler,
-		CacheManager:      cacheManager,
+		DB:                   db,
+		PermissionRepo:       permissionRepo,
+		PermissionService:    permissionService,
+		PermissionHandler:    permissionHandler,
+		RoleRepo:             roleRepo,
+		RoleService:          roleService,
+		RoleHandler:          roleHandler,
+		PlantRepo:            plantRepo,
+		PlantService:         plantService,
+		PlantHandler:         plantHandler,
+		UserRepo:             userRepo,
+		UserService:          userService,
+		UserHandler:          userHandler,
+		CategoryRepo:         categoryRepo,
+		CategoryService:      categoryService,
+		CategoryHandler:      categoryHandler,
+		ProductRepo:          productRepo,
+		ProductService:       productService,
+		ProductHandler:       productHandler,
+		StoreRepo:            storeRepo,
+		StoreService:         storeService,
+		StoreHandler:         storeHandler,
+		ContainerRepo:        containerRepo,
+		ContainerService:     containerService,
+		ContainerHandler:     containerHandler,
+		StorelocationRepo:    storelocationRepo,
+		StorelocationService: storelocationService,
+		StorelocationHandler: storelocationHandler,
+		MachineRepo:          machineRepo,
+		MachineService:       machineService,
+		MachineHandler:       machineHandler,
+		CustomerRepo:         customerRepo,
+		CustomerService:      customerService,
+		CustomerHandler:      customerHandler,
+		JoborderRepo:         joborderRepo,
+		JoborderService:      joborderService,
+		JoborderHandler:      joborderHandler,
+		BatchlabelRepo:       batchlabelRepo,
+		BatchlabelService:    batchlabelService,
+		BatchlabelHandler:    batchlabelHandler,
+		InventoryRepo:        inventoryRepo,
+		InventoryService:     inventoryService,
+		InventoryHandler:     inventoryHandler,
+		AuthService:          authService,
+		AuthHandler:          authHandler,
+		CacheManager:         cacheManager,
 	}
 }
 
