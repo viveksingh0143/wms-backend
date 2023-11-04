@@ -69,11 +69,13 @@ func (p *ProductGormRepository) Create(productModel *models.Product) error {
 		if err := tx.Omit("Ingredients").Create(&productModel).Error; err != nil {
 			return err
 		}
-		for _, ingredient := range productModel.Ingredients {
-			ingredient.ProductID = productModel.ID
-		}
-		if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
-			return err
+		if productModel.Ingredients != nil && len(productModel.Ingredients) > 0 {
+			for _, ingredient := range productModel.Ingredients {
+				ingredient.ProductID = productModel.ID
+			}
+			if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -110,11 +112,13 @@ func (p *ProductGormRepository) Update(productModel *models.Product) error {
 		if err := tx.Omit("Ingredients").Save(&productModel).Error; err != nil {
 			return err
 		}
-		for _, ingredient := range productModel.Ingredients {
-			ingredient.ProductID = productModel.ID
-		}
-		if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
-			return err
+		if productModel.Ingredients != nil && len(productModel.Ingredients) > 0 {
+			for _, ingredient := range productModel.Ingredients {
+				ingredient.ProductID = productModel.ID
+			}
+			if err := tx.Omit(clause.Associations).Create(&productModel.Ingredients).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})

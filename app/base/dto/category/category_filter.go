@@ -5,9 +5,11 @@ import (
 )
 
 type Filter struct {
-	Query    string       `form:"query" db:"name,full_path" whereType:"like" binding:"omitempty,max=100"` // Filters by Name, FullPath, max length 100
-	ID       uint         `form:"id" db:"id" binding:"omitempty,gt=0"`                                    // Filters by ID, should be greater than 0
-	Name     string       `form:"name" db:"name" binding:"omitempty,max=100"`                             // Filters by Name, max length 100
-	ParentID *uint        `form:"parent_id" db:"parent_id" binding:"omitempty"`                           // Filters by ParentID
-	Status   types.Status `form:"status" db:"status" binding:"omitempty,gt=0"`                            // Filters by Status, should be greater than 0
+	Query        string       `form:"query" db:"name,full_path" whereType:"like" binding:"omitempty,max=100"`
+	ID           uint         `form:"id" db:"id" binding:"omitempty,gt=0"`
+	NameLike     string       `form:"name_like" db:"name" whereType:"like" binding:"omitempty,max=100"`
+	ParentID     *uint        `form:"parent_id" db:"parent_id" binding:"omitempty"`
+	Status       types.Status `form:"status" db:"status" binding:"omitempty,gt=0"`
+	CreatedAtGte string       `form:"createdAt_gte" db:"created_at" whereType:"gte" binding:"omitempty,max=100"`
+	CreatedAtLte string       `form:"createdAt_lte" db:"created_at" whereType:"lte" binding:"omitempty,max=100"`
 }

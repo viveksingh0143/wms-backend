@@ -59,6 +59,10 @@ func (s *DefaultStoreService) CreateStore(plantID uint, storeForm *store.Form) e
 		}
 	}
 	storeModel := s.ToModel(plantID, storeForm)
+	if storeForm.Category != nil {
+		categoryForm, _ := s.categoryService.GetCategoryShortInfoByID(storeForm.Category.ID)
+		storeModel.CategoryPath = categoryForm.FullPath
+	}
 	return s.repo.Create(plantID, storeModel)
 }
 
@@ -87,6 +91,10 @@ func (s *DefaultStoreService) UpdateStore(plantID uint, id uint, storeForm *stor
 		return err
 	}
 	s.FormToModel(plantID, storeForm, storeModel)
+	if storeForm.Category != nil {
+		categoryForm, _ := s.categoryService.GetCategoryShortInfoByID(storeForm.Category.ID)
+		storeModel.CategoryPath = categoryForm.FullPath
+	}
 	return s.repo.Update(plantID, storeModel)
 }
 
@@ -120,6 +128,9 @@ func (s *DefaultStoreService) ToModel(plantID uint, storeForm *store.Form) *mode
 	storeModel.ID = storeForm.ID
 	if storeForm.Category != nil {
 		storeModel.Category = s.categoryService.ToModel(storeForm.Category)
+		storeModel.CategoryPath = storeModel.Category.FullPath
+	} else {
+		storeModel.CategoryPath = ""
 	}
 	storeModel.PlantID = plantID
 	if storeForm.Approvers != nil {
@@ -140,9 +151,11 @@ func (s *DefaultStoreService) FormToModel(plantID uint, storeForm *store.Form, s
 
 	if storeForm.Category != nil {
 		storeModel.Category = s.categoryService.ToModel(storeForm.Category)
+		storeModel.CategoryPath = storeModel.Category.FullPath
 	} else {
 		storeModel.Category = nil
 		storeModel.CategoryID = nil
+		storeModel.CategoryPath = ""
 	}
 
 	if storeForm.Approvers != nil {
@@ -156,11 +169,12 @@ func (s *DefaultStoreService) FormToModel(plantID uint, storeForm *store.Form, s
 
 func (s *DefaultStoreService) ToForm(plantID uint, storeModel *models.Store) *store.Form {
 	storeForm := &store.Form{
-		ID:      storeModel.ID,
-		Name:    storeModel.Name,
-		Code:    storeModel.Code,
-		Address: storeModel.Address,
-		Status:  storeModel.Status,
+		ID:           storeModel.ID,
+		Name:         storeModel.Name,
+		Code:         storeModel.Code,
+		Address:      storeModel.Address,
+		Status:       storeModel.Status,
+		CategoryPath: storeModel.CategoryPath,
 	}
 	storeForm.PlantID = storeModel.PlantID
 	if storeModel.Category != nil {

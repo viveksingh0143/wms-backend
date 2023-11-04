@@ -11,6 +11,7 @@ import (
 type CategoryService interface {
 	GetAllCategories(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*category.Form, int64, error)
 	CreateCategory(categoryForm *category.Form) error
+	GetCategoryShortInfoByID(id uint) (*category.Form, error)
 	GetCategoryByID(id uint) (*category.Form, error)
 	UpdateCategory(id uint, categoryForm *category.Form) error
 	DeleteCategory(id uint) error
@@ -34,7 +35,7 @@ func NewCategoryService(repo repository.CategoryRepository) CategoryService {
 }
 
 func (s *DefaultCategoryService) GetAllCategories(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*category.Form, int64, error) {
-	data, count, err := s.repo.GetAll(filter, pagination, sorting)
+	data, count, err := s.repo.GetAll(filter, pagination, sorting, true, false)
 	if err != nil {
 		return nil, count, err
 	}
@@ -57,8 +58,16 @@ func (s *DefaultCategoryService) CreateCategory(categoryForm *category.Form) err
 	return s.repo.Create(categoryModel)
 }
 
+func (s *DefaultCategoryService) GetCategoryShortInfoByID(id uint) (*category.Form, error) {
+	data, err := s.repo.GetByID(id, false, false)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(data), nil
+}
+
 func (s *DefaultCategoryService) GetCategoryByID(id uint) (*category.Form, error) {
-	data, err := s.repo.GetByID(id)
+	data, err := s.repo.GetByID(id, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +86,7 @@ func (s *DefaultCategoryService) UpdateCategory(id uint, categoryForm *category.
 			return responses.NewInputError("parent.id", "parent not exists", categoryForm.Parent.ID)
 		}
 	}
-	categoryModel, err := s.repo.GetByID(id)
+	categoryModel, err := s.repo.GetByID(id, false, false)
 	if err != nil {
 		return err
 	}
@@ -134,12 +143,16 @@ func (s *DefaultCategoryService) FormToModel(categoryForm *category.Form, catego
 
 func (s *DefaultCategoryService) ToForm(categoryModel *models.Category) *category.Form {
 	categoryForm := &category.Form{
-		ID:       categoryModel.ID,
 		Name:     categoryModel.Name,
 		Slug:     categoryModel.Slug,
 		FullPath: categoryModel.FullPath,
 		Status:   categoryModel.Status,
 	}
+	categoryForm.ID = categoryModel.ID
+	categoryForm.CreatedAt = categoryModel.CreatedAt
+	categoryForm.UpdatedAt = categoryModel.UpdatedAt
+	categoryForm.UpdatedBy = categoryModel.UpdatedBy
+
 	if categoryModel.Children != nil {
 		children := make([]*category.Form, 0)
 		if len(categoryModel.Children) > 0 {

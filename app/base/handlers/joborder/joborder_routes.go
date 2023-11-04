@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupJobOrderRoutes(r *gin.RouterGroup, joborderHandler *Handler) {
+func SetupJoborderRoutes(r *gin.RouterGroup, joborderHandler *Handler) {
 	api := r.Group("/joborders")
 	{
 		api.DELETE("/bulk-update", joborderHandler.DeleteBulk)

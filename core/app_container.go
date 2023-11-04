@@ -24,6 +24,10 @@ import (
 	"star-wms/app/base/handlers/store"
 	baseRepository "star-wms/app/base/repository"
 	baseService "star-wms/app/base/service"
+	"star-wms/app/warehouse/handlers/batchlabel"
+	"star-wms/app/warehouse/handlers/inventory"
+	warehouseRepository "star-wms/app/warehouse/repository"
+	warehouseService "star-wms/app/warehouse/service"
 	"star-wms/configs"
 	"star-wms/core/middlewares"
 	"star-wms/core/validation"
@@ -62,9 +66,15 @@ type AppContainer struct {
 	CustomerRepo      baseRepository.CustomerRepository
 	CustomerService   baseService.CustomerService
 	CustomerHandler   *customer.Handler
-	JobOrderRepo      baseRepository.JobOrderRepository
-	JobOrderService   baseService.JobOrderService
-	JobOrderHandler   *joborder.Handler
+	JoborderRepo      baseRepository.JoborderRepository
+	JoborderService   baseService.JoborderService
+	JoborderHandler   *joborder.Handler
+	BatchlabelRepo    warehouseRepository.BatchlabelRepository
+	BatchlabelService warehouseService.BatchlabelService
+	BatchlabelHandler *batchlabel.Handler
+	InventoryRepo     warehouseRepository.InventoryRepository
+	InventoryService  warehouseService.InventoryService
+	InventoryHandler  *inventory.Handler
 	AuthService       authServices.AuthService
 	AuthHandler       *authHandlers.Handler
 	CacheManager      *cache.Manager
@@ -111,9 +121,17 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	customerService := baseService.NewCustomerService(customerRepo)
 	customerHandler := customer.NewCustomerHandler(customerService)
 
-	joborderRepo := baseRepository.NewJobOrderGormRepository(db)
-	joborderService := baseService.NewJobOrderService(joborderRepo, customerService, productService)
-	joborderHandler := joborder.NewJobOrderHandler(joborderService)
+	joborderRepo := baseRepository.NewJoborderGormRepository(db)
+	joborderService := baseService.NewJoborderService(joborderRepo, customerService, productService)
+	joborderHandler := joborder.NewJoborderHandler(joborderService)
+
+	batchlabelRepo := warehouseRepository.NewBatchlabelGormRepository(db)
+	batchlabelService := warehouseService.NewBatchlabelService(batchlabelRepo, customerService, productService, machineService, joborderService)
+	batchlabelHandler := batchlabel.NewBatchlabelHandler(batchlabelService)
+
+	inventoryRepo := warehouseRepository.NewInventoryGormRepository(db)
+	inventoryService := warehouseService.NewInventoryService(inventoryRepo, productService, storeService)
+	inventoryHandler := inventory.NewInventoryHandler(inventoryService)
 
 	authService := authServices.NewAuthService(userRepo, roleService, plantService, cacheManager)
 	authHandler := authHandlers.NewAuthHandler(authService)
@@ -150,9 +168,15 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		CustomerRepo:      customerRepo,
 		CustomerService:   customerService,
 		CustomerHandler:   customerHandler,
-		JobOrderRepo:      joborderRepo,
-		JobOrderService:   joborderService,
-		JobOrderHandler:   joborderHandler,
+		JoborderRepo:      joborderRepo,
+		JoborderService:   joborderService,
+		JoborderHandler:   joborderHandler,
+		BatchlabelRepo:    batchlabelRepo,
+		BatchlabelService: batchlabelService,
+		BatchlabelHandler: batchlabelHandler,
+		InventoryRepo:     inventoryRepo,
+		InventoryService:  inventoryService,
+		InventoryHandler:  inventoryHandler,
 		AuthService:       authService,
 		AuthHandler:       authHandler,
 		CacheManager:      cacheManager,

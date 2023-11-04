@@ -47,6 +47,14 @@ func updateChildPaths(tx *gorm.DB, parent *Category) error {
 			if err := tx.Model(&Category{}).Where("id = ?", child.ID).Omit(clause.Associations).Updates(map[string]interface{}{"FullPath": child.FullPath}).Error; err != nil {
 				return err
 			}
+			// Update this record's FullPath to Products
+			if err := tx.Model(&Product{}).Where("category_id = ?", child.ID).Omit(clause.Associations).Updates(map[string]interface{}{"CategoryPath": child.FullPath}).Error; err != nil {
+				return err
+			}
+			// Update this record's FullPath to Stores
+			if err := tx.Model(&Store{}).Where("category_id = ?", child.ID).Omit(clause.Associations).Updates(map[string]interface{}{"CategoryPath": child.FullPath}).Error; err != nil {
+				return err
+			}
 			err := updateChildPaths(tx, &child)
 			if err != nil {
 				return err
@@ -78,7 +86,14 @@ func (c *Category) AfterUpdate(tx *gorm.DB) (err error) {
 	if err := tx.Model(&Category{}).Where("id = ?", c.ID).Omit(clause.Associations).Updates(map[string]interface{}{"FullPath": c.FullPath}).Error; err != nil {
 		return err
 	}
-
+	// Update this record's FullPath to Products
+	if err := tx.Model(&Product{}).Where("category_id = ?", c.ID).Omit(clause.Associations).Updates(map[string]interface{}{"CategoryPath": c.FullPath}).Error; err != nil {
+		return err
+	}
+	// Update this record's FullPath to Stores
+	if err := tx.Model(&Store{}).Where("category_id = ?", c.ID).Omit(clause.Associations).Updates(map[string]interface{}{"CategoryPath": c.FullPath}).Error; err != nil {
+		return err
+	}
 	// Update the FullPath for all children
 	return updateChildPaths(tx, c)
 }

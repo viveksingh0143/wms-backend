@@ -27,11 +27,20 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 			var orQueryStrings []string
 			var orQueryValues []interface{}
 			for _, tag := range dbTags {
-				if whereTypeTag == "like" {
+				if whereTypeTag == "startswith" {
+					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s LIKE ?", tag))
+					orQueryValues = append(orQueryValues, fmt.Sprintf("%v", value)+"%")
+				} else if whereTypeTag == "like" {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s LIKE ?", tag))
 					orQueryValues = append(orQueryValues, "%"+fmt.Sprintf("%v", value)+"%")
 				} else if whereTypeTag == "ne" {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s != ?", tag))
+					orQueryValues = append(orQueryValues, value)
+				} else if whereTypeTag == "gte" {
+					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s >= ?", tag))
+					orQueryValues = append(orQueryValues, value)
+				} else if whereTypeTag == "lte" {
+					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s <= ?", tag))
 					orQueryValues = append(orQueryValues, value)
 				} else {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s = ?", tag))
@@ -40,10 +49,16 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 			}
 			query = query.Or(strings.Join(orQueryStrings, " OR "), orQueryValues...)
 		} else {
-			if whereTypeTag == "like" {
+			if whereTypeTag == "startswith" {
+				query = query.Where(fmt.Sprintf("%s LIKE ?", dbTag), fmt.Sprintf("%v", value)+"%")
+			} else if whereTypeTag == "like" {
 				query = query.Where(fmt.Sprintf("%s LIKE ?", dbTag), "%"+fmt.Sprintf("%v", value)+"%")
 			} else if whereTypeTag == "ne" {
 				query = query.Where(fmt.Sprintf("%s != ?", dbTag), value)
+			} else if whereTypeTag == "gte" {
+				query = query.Where(fmt.Sprintf("%s >= ?", dbTag), value)
+			} else if whereTypeTag == "lte" {
+				query = query.Where(fmt.Sprintf("%s <= ?", dbTag), value)
 			} else {
 				query = query.Where(fmt.Sprintf("%s = ?", dbTag), value)
 			}

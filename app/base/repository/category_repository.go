@@ -10,9 +10,9 @@ import (
 )
 
 type CategoryRepository interface {
-	GetAll(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Category, int64, error)
+	GetAll(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting, withParent bool, withChildren bool) ([]*models.Category, int64, error)
 	Create(category *models.Category) error
-	GetByID(id uint) (*models.Category, error)
+	GetByID(id uint, withParent bool, withChildren bool) (*models.Category, error)
 	Update(category *models.Category) error
 	Delete(id uint) error
 	DeleteMulti(ids []uint) error
@@ -29,7 +29,7 @@ func NewCategoryGormRepository(database *gorm.DB) CategoryRepository {
 	return &CategoryGormRepository{db: database}
 }
 
-func (p *CategoryGormRepository) GetAll(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Category, int64, error) {
+func (p *CategoryGormRepository) GetAll(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting, withParent bool, withChildren bool) ([]*models.Category, int64, error) {
 	var categories []*models.Category
 	var count int64
 
@@ -44,7 +44,14 @@ func (p *CategoryGormRepository) GetAll(filter category.Filter, pagination commo
 	query = utils.ApplySorting(query, sorting)
 	query = utils.ApplyPagination(query, pagination)
 
-	if err := query.Preload("Parent").Find(&categories).Error; err != nil {
+	if withParent {
+		query = query.Preload("Parent")
+	}
+	if withChildren {
+		query = query.Preload("Children")
+	}
+
+	if err := query.Find(&categories).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to get all categories")
 		return nil, 0, err
 	}
@@ -65,9 +72,16 @@ func (p *CategoryGormRepository) Create(categoryModel *models.Category) error {
 	return err
 }
 
-func (p *CategoryGormRepository) GetByID(id uint) (*models.Category, error) {
+func (p *CategoryGormRepository) GetByID(id uint, withParent bool, withChildren bool) (*models.Category, error) {
 	var categoryModel *models.Category
-	if err := p.db.Preload("Parent").Preload("Children").First(&categoryModel, id).Error; err != nil {
+	query := p.db
+	if withParent {
+		query = query.Preload("Parent")
+	}
+	if withChildren {
+		query = query.Preload("Children")
+	}
+	if err := query.First(&categoryModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get category by ID")
 		return nil, err
 	}

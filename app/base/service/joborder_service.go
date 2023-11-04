@@ -8,33 +8,38 @@ import (
 	"star-wms/core/common/responses"
 )
 
-type JobOrderService interface {
-	GetAllJobOrders(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*joborder.Form, int64, error)
-	CreateJobOrder(plantID uint, joborderForm *joborder.Form) error
-	GetJobOrderByID(plantID uint, id uint) (*joborder.Form, error)
-	UpdateJobOrder(plantID uint, id uint, joborderForm *joborder.Form) error
-	DeleteJobOrder(plantID uint, id uint) error
-	DeleteJobOrders(plantID uint, ids []uint) error
+type JoborderService interface {
+	GetAllJoborders(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*joborder.Form, int64, error)
+	CreateJoborder(plantID uint, joborderForm *joborder.Form) error
+	GetJoborderByID(plantID uint, id uint) (*joborder.Form, error)
+	UpdateJoborder(plantID uint, id uint, joborderForm *joborder.Form) error
+	DeleteJoborder(plantID uint, id uint) error
+	DeleteJoborders(plantID uint, ids []uint) error
+	ExistsByItemId(joborderID uint, ID uint) bool
 	ExistsById(plantID uint, ID uint) bool
 	ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool
-	ToModel(plantID uint, joborderForm *joborder.Form) *models.JobOrder
-	FormToModel(plantID uint, joborderForm *joborder.Form, joborderModel *models.JobOrder)
-	ToForm(plantID uint, joborderModel *models.JobOrder) *joborder.Form
-	ToFormSlice(plantID uint, joborderModels []*models.JobOrder) []*joborder.Form
-	ToModelSlice(plantID uint, joborderForms []*joborder.Form) []*models.JobOrder
+	ToModel(plantID uint, joborderForm *joborder.Form) *models.Joborder
+	FormToModel(plantID uint, joborderForm *joborder.Form, joborderModel *models.Joborder)
+	ToForm(plantID uint, joborderModel *models.Joborder) *joborder.Form
+	ToFormSlice(plantID uint, joborderModels []*models.Joborder) []*joborder.Form
+	ToModelSlice(plantID uint, joborderForms []*joborder.Form) []*models.Joborder
+	ToItemFormSlice(plantID uint, itemModels []*models.JoborderItem) []*joborder.ItemsForm
+	ToItemForm(plantID uint, itemModel *models.JoborderItem) *joborder.ItemsForm
+	ToItemModel(plantID uint, itemForm *joborder.ItemsForm) *models.JoborderItem
+	ToItemModelSlice(plantID uint, itemForms []*joborder.ItemsForm) []*models.JoborderItem
 }
 
-type DefaultJobOrderService struct {
-	repo            repository.JobOrderRepository
+type DefaultJoborderService struct {
+	repo            repository.JoborderRepository
 	customerService CustomerService
 	productService  ProductService
 }
 
-func NewJobOrderService(repo repository.JobOrderRepository, customerService CustomerService, productService ProductService) JobOrderService {
-	return &DefaultJobOrderService{repo: repo, customerService: customerService, productService: productService}
+func NewJoborderService(repo repository.JoborderRepository, customerService CustomerService, productService ProductService) JoborderService {
+	return &DefaultJoborderService{repo: repo, customerService: customerService, productService: productService}
 }
 
-func (s *DefaultJobOrderService) GetAllJobOrders(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*joborder.Form, int64, error) {
+func (s *DefaultJoborderService) GetAllJoborders(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*joborder.Form, int64, error) {
 	data, count, err := s.repo.GetAll(plantID, filter, pagination, sorting)
 	if err != nil {
 		return nil, count, err
@@ -42,7 +47,7 @@ func (s *DefaultJobOrderService) GetAllJobOrders(plantID uint, filter joborder.F
 	return s.ToFormSlice(plantID, data), count, err
 }
 
-func (s *DefaultJobOrderService) CreateJobOrder(plantID uint, joborderForm *joborder.Form) error {
+func (s *DefaultJoborderService) CreateJoborder(plantID uint, joborderForm *joborder.Form) error {
 	if s.ExistsByOrderNo(plantID, joborderForm.OrderNo, 0) {
 		return responses.NewInputError("order_no", "already exists", joborderForm.OrderNo)
 	}
@@ -55,7 +60,7 @@ func (s *DefaultJobOrderService) CreateJobOrder(plantID uint, joborderForm *jobo
 	return s.repo.Create(plantID, joborderModel)
 }
 
-func (s *DefaultJobOrderService) GetJobOrderByID(plantID uint, id uint) (*joborder.Form, error) {
+func (s *DefaultJoborderService) GetJoborderByID(plantID uint, id uint) (*joborder.Form, error) {
 	data, err := s.repo.GetByID(plantID, id)
 	if err != nil {
 		return nil, err
@@ -63,7 +68,7 @@ func (s *DefaultJobOrderService) GetJobOrderByID(plantID uint, id uint) (*jobord
 	return s.ToForm(plantID, data), nil
 }
 
-func (s *DefaultJobOrderService) UpdateJobOrder(plantID uint, id uint, joborderForm *joborder.Form) error {
+func (s *DefaultJoborderService) UpdateJoborder(plantID uint, id uint, joborderForm *joborder.Form) error {
 	if s.ExistsByOrderNo(plantID, joborderForm.OrderNo, id) {
 		return responses.NewInputError("order_no", "already exists", joborderForm.OrderNo)
 	}
@@ -80,24 +85,28 @@ func (s *DefaultJobOrderService) UpdateJobOrder(plantID uint, id uint, joborderF
 	return s.repo.Update(plantID, joborderModel)
 }
 
-func (s *DefaultJobOrderService) DeleteJobOrder(plantID uint, id uint) error {
+func (s *DefaultJoborderService) DeleteJoborder(plantID uint, id uint) error {
 	return s.repo.Delete(plantID, id)
 }
 
-func (s *DefaultJobOrderService) DeleteJobOrders(plantID uint, ids []uint) error {
+func (s *DefaultJoborderService) DeleteJoborders(plantID uint, ids []uint) error {
 	return s.repo.DeleteMulti(plantID, ids)
 }
 
-func (s *DefaultJobOrderService) ExistsById(plantID uint, ID uint) bool {
+func (s *DefaultJoborderService) ExistsByItemId(joborderID uint, ID uint) bool {
+	return s.repo.ExistsByItemId(joborderID, ID)
+}
+
+func (s *DefaultJoborderService) ExistsById(plantID uint, ID uint) bool {
 	return s.repo.ExistsByID(plantID, ID)
 }
 
-func (s *DefaultJobOrderService) ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool {
+func (s *DefaultJoborderService) ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool {
 	return s.repo.ExistsByOrderNo(plantID, orderNo, ID)
 }
 
-func (s *DefaultJobOrderService) ToModel(plantID uint, joborderForm *joborder.Form) *models.JobOrder {
-	joborderModel := &models.JobOrder{
+func (s *DefaultJoborderService) ToModel(plantID uint, joborderForm *joborder.Form) *models.Joborder {
+	joborderModel := &models.Joborder{
 		IssuedDate:    joborderForm.IssuedDate,
 		OrderNo:       joborderForm.OrderNo,
 		POCategory:    models.POCategory(joborderForm.POCategory),
@@ -116,7 +125,7 @@ func (s *DefaultJobOrderService) ToModel(plantID uint, joborderForm *joborder.Fo
 	return joborderModel
 }
 
-func (s *DefaultJobOrderService) FormToModel(plantID uint, joborderForm *joborder.Form, joborderModel *models.JobOrder) {
+func (s *DefaultJoborderService) FormToModel(plantID uint, joborderForm *joborder.Form, joborderModel *models.Joborder) {
 	joborderModel.IssuedDate = joborderForm.IssuedDate
 	joborderModel.OrderNo = joborderForm.OrderNo
 	joborderModel.POCategory = models.POCategory(joborderForm.POCategory)
@@ -132,11 +141,11 @@ func (s *DefaultJobOrderService) FormToModel(plantID uint, joborderForm *joborde
 	if joborderForm.Items != nil {
 		joborderModel.Items = s.ToItemModelSlice(plantID, joborderForm.Items)
 	} else {
-		joborderModel.Items = make([]*models.JobOrderItem, 0)
+		joborderModel.Items = make([]*models.JoborderItem, 0)
 	}
 }
 
-func (s *DefaultJobOrderService) ToForm(plantID uint, joborderModel *models.JobOrder) *joborder.Form {
+func (s *DefaultJoborderService) ToForm(plantID uint, joborderModel *models.Joborder) *joborder.Form {
 	joborderForm := &joborder.Form{
 		ID:            joborderModel.ID,
 		IssuedDate:    joborderModel.IssuedDate,
@@ -152,7 +161,7 @@ func (s *DefaultJobOrderService) ToForm(plantID uint, joborderModel *models.JobO
 	return joborderForm
 }
 
-func (s *DefaultJobOrderService) ToFormSlice(plantID uint, joborderModels []*models.JobOrder) []*joborder.Form {
+func (s *DefaultJoborderService) ToFormSlice(plantID uint, joborderModels []*models.Joborder) []*joborder.Form {
 	data := make([]*joborder.Form, 0)
 	for _, joborderModel := range joborderModels {
 		data = append(data, s.ToForm(plantID, joborderModel))
@@ -160,16 +169,17 @@ func (s *DefaultJobOrderService) ToFormSlice(plantID uint, joborderModels []*mod
 	return data
 }
 
-func (s *DefaultJobOrderService) ToModelSlice(plantID uint, joborderForms []*joborder.Form) []*models.JobOrder {
-	data := make([]*models.JobOrder, 0)
+func (s *DefaultJoborderService) ToModelSlice(plantID uint, joborderForms []*joborder.Form) []*models.Joborder {
+	data := make([]*models.Joborder, 0)
 	for _, joborderForm := range joborderForms {
 		data = append(data, s.ToModel(plantID, joborderForm))
 	}
 	return data
 }
 
-func (s *DefaultJobOrderService) ToItemForm(plantID uint, itemModel *models.JobOrderItem) *joborder.ItemsForm {
+func (s *DefaultJoborderService) ToItemForm(plantID uint, itemModel *models.JoborderItem) *joborder.ItemsForm {
 	ingredientForm := &joborder.ItemsForm{
+		ID:        itemModel.ID,
 		ProductID: itemModel.ProductID,
 		Product:   s.productService.ToForm(itemModel.Product),
 		Quantity:  itemModel.Quantity,
@@ -177,7 +187,7 @@ func (s *DefaultJobOrderService) ToItemForm(plantID uint, itemModel *models.JobO
 	return ingredientForm
 }
 
-func (s *DefaultJobOrderService) ToItemFormSlice(plantID uint, itemModels []*models.JobOrderItem) []*joborder.ItemsForm {
+func (s *DefaultJoborderService) ToItemFormSlice(plantID uint, itemModels []*models.JoborderItem) []*joborder.ItemsForm {
 	data := make([]*joborder.ItemsForm, 0)
 	for _, itemModel := range itemModels {
 		data = append(data, s.ToItemForm(plantID, itemModel))
@@ -185,20 +195,21 @@ func (s *DefaultJobOrderService) ToItemFormSlice(plantID uint, itemModels []*mod
 	return data
 }
 
-func (s *DefaultJobOrderService) ToItemModel(plantID uint, itemForm *joborder.ItemsForm) *models.JobOrderItem {
+func (s *DefaultJoborderService) ToItemModel(plantID uint, itemForm *joborder.ItemsForm) *models.JoborderItem {
 	product := &models.Product{}
 	product.ID = itemForm.ProductID
 
-	jobOrderItemModel := &models.JobOrderItem{
+	joborderItemModel := &models.JoborderItem{
 		ProductID: itemForm.ProductID,
 		Product:   product,
 		Quantity:  itemForm.Quantity,
 	}
-	return jobOrderItemModel
+	joborderItemModel.ID = itemForm.ID
+	return joborderItemModel
 }
 
-func (s *DefaultJobOrderService) ToItemModelSlice(plantID uint, itemForms []*joborder.ItemsForm) []*models.JobOrderItem {
-	data := make([]*models.JobOrderItem, 0)
+func (s *DefaultJoborderService) ToItemModelSlice(plantID uint, itemForms []*joborder.ItemsForm) []*models.JoborderItem {
+	data := make([]*models.JoborderItem, 0)
 	for _, itemForm := range itemForms {
 		data = append(data, s.ToItemModel(plantID, itemForm))
 	}

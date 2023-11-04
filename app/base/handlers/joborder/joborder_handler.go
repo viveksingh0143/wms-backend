@@ -14,10 +14,10 @@ import (
 )
 
 type Handler struct {
-	service service.JobOrderService
+	service service.JoborderService
 }
 
-func NewJobOrderHandler(s service.JobOrderService) *Handler {
+func NewJoborderHandler(s service.JoborderService) *Handler {
 	return &Handler{
 		service: s,
 	}
@@ -40,7 +40,7 @@ func (ph *Handler) List(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	joborders, totalRecords, err := ph.service.GetAllJobOrders(plantForm.ID, filter, pagination, sorting)
+	joborders, totalRecords, err := ph.service.GetAllJoborders(plantForm.ID, filter, pagination, sorting)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
@@ -73,13 +73,13 @@ func (ph *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	err := ph.service.CreateJobOrder(plantForm.ID, &joborderForm)
+	err := ph.service.CreateJoborder(plantForm.ID, &joborderForm)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "JobOrder created successfully"))
+	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Joborder created successfully"))
 }
 
 // Get a joborder
@@ -94,13 +94,13 @@ func (ph *Handler) Get(c *gin.Context) {
 		return
 	}
 
-	joborderDto, err := ph.service.GetJobOrderByID(plantForm.ID, id)
+	joborderDto, err := ph.service.GetJoborderByID(plantForm.ID, id)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "JobOrder fetched successfully", joborderDto))
+	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Joborder fetched successfully", joborderDto))
 }
 
 // Update a joborder
@@ -133,13 +133,13 @@ func (ph *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	err = ph.service.UpdateJobOrder(plantForm.ID, id, &joborderForm)
+	err = ph.service.UpdateJoborder(plantForm.ID, id, &joborderForm)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "JobOrder updated successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Joborder updated successfully"))
 }
 
 // Delete a joborder
@@ -156,13 +156,13 @@ func (ph *Handler) Delete(c *gin.Context) {
 	}
 
 	id := uint(idInt)
-	err = ph.service.DeleteJobOrder(plantForm.ID, id)
+	err = ph.service.DeleteJoborder(plantForm.ID, id)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "JobOrder deleted successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Joborder deleted successfully"))
 }
 
 // DeleteBulk a joborder
@@ -184,11 +184,11 @@ func (ph *Handler) DeleteBulk(c *gin.Context) {
 		return
 	}
 
-	err := ph.service.DeleteJobOrders(plantForm.ID, idsForm.IDs)
+	err := ph.service.DeleteJoborders(plantForm.ID, idsForm.IDs)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "JobOrders deleted successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Joborders deleted successfully"))
 }

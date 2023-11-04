@@ -4,10 +4,10 @@ import (
 	"star-wms/core/common/models"
 )
 
-type JobOrderItem struct {
+type JoborderItem struct {
 	models.MyModel
-	JobOrderID uint     `gorm:"not null;index;constraint:OnDelete:CASCADE;"`
+	JoborderID uint     `gorm:"not null;index;constraint:OnDelete:CASCADE;"`
 	ProductID  uint     `gorm:"not null;index;"`
-	Product    *Product `gorm:"foreignKey:ProductID"`
+	Product    *Product `gorm:"foreignKey:ProductID;constraint:OnDelete:CASCADE;"`
 	Quantity   float64  `gorm:"not null"`
 }

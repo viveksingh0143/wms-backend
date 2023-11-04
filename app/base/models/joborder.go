@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type JobOrder struct {
+type Joborder struct {
 	models.MyModel
 	IssuedDate    time.Time           `gorm:"not null;"`
 	OrderNo       string              `gorm:"type:varchar(255);uniqueIndex;not null;column:order_no"`
@@ -16,7 +16,7 @@ type JobOrder struct {
 	ProcessStatus types.ProcessStatus `gorm:"type:int;default:1"`
 	CustomerID    *uint               `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;column:customer_id"`
 	Customer      *Customer           `gorm:"foreignKey:CustomerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Items         []*JobOrderItem     `gorm:"foreignKey:JobOrderID;constraint:OnDelete:CASCADE;"`
+	Items         []*JoborderItem     `gorm:"foreignKey:JoborderID;constraint:OnDelete:CASCADE;"`
 	PlantID       uint                `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Plant         adminModels.Plant   `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

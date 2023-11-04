@@ -14,6 +14,8 @@ import (
 	"star-wms/app/base/handlers/machine"
 	"star-wms/app/base/handlers/product"
 	"star-wms/app/base/handlers/store"
+	"star-wms/app/warehouse/handlers/batchlabel"
+	"star-wms/app/warehouse/handlers/inventory"
 	"star-wms/core/middlewares"
 )
 
@@ -52,7 +54,17 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 					container.SetupContainerRoutes(plantBasedRoutes, receiver.ContainerHandler)
 					machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
 					customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)
-					joborder.SetupJobOrderRoutes(plantBasedRoutes, receiver.JobOrderHandler)
+					joborder.SetupJoborderRoutes(plantBasedRoutes, receiver.JoborderHandler)
+					batchlabel.SetupBatchlabelRoutes(plantBasedRoutes, receiver.BatchlabelHandler)
+				}
+			}
+
+			warehouseRoutes := api.Group("/warehouse", middlewares.AuthRequiredMiddleware(receiver.AuthService))
+			{
+				warehousePlantBasedRoutes := warehouseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
+				{
+					batchlabel.SetupBatchlabelRoutes(warehousePlantBasedRoutes, receiver.BatchlabelHandler)
+					inventory.SetupInventoryRoutes(warehousePlantBasedRoutes, receiver.InventoryHandler)
 				}
 			}
 		}

@@ -10,30 +10,31 @@ import (
 	"star-wms/core/utils"
 )
 
-type JobOrderRepository interface {
-	GetAll(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.JobOrder, int64, error)
-	Create(plantID uint, joborder *models.JobOrder) error
-	GetByID(plantID uint, id uint) (*models.JobOrder, error)
-	Update(plantID uint, joborder *models.JobOrder) error
+type JoborderRepository interface {
+	GetAll(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Joborder, int64, error)
+	Create(plantID uint, joborder *models.Joborder) error
+	GetByID(plantID uint, id uint) (*models.Joborder, error)
+	Update(plantID uint, joborder *models.Joborder) error
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
+	ExistsByItemId(jororderID uint, ID uint) bool
 	ExistsByID(plantID uint, ID uint) bool
 	ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool
 }
 
-type JobOrderGormRepository struct {
+type JoborderGormRepository struct {
 	db *gorm.DB
 }
 
-func NewJobOrderGormRepository(database *gorm.DB) JobOrderRepository {
-	return &JobOrderGormRepository{db: database}
+func NewJoborderGormRepository(database *gorm.DB) JoborderRepository {
+	return &JoborderGormRepository{db: database}
 }
 
-func (p *JobOrderGormRepository) GetAll(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.JobOrder, int64, error) {
-	var joborders []*models.JobOrder
+func (p *JoborderGormRepository) GetAll(plantID uint, filter joborder.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Joborder, int64, error) {
+	var joborders []*models.Joborder
 	var count int64
 
-	query := p.db.Model(&models.JobOrder{})
+	query := p.db.Model(&models.Joborder{})
 	query.Where("plant_id = ?", plantID)
 	query = utils.BuildQuery(query, filter)
 
@@ -52,7 +53,7 @@ func (p *JobOrderGormRepository) GetAll(plantID uint, filter joborder.Filter, pa
 	return joborders, count, nil
 }
 
-func (p *JobOrderGormRepository) Create(plantID uint, joborderModel *models.JobOrder) error {
+func (p *JoborderGormRepository) Create(plantID uint, joborderModel *models.Joborder) error {
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		if joborderModel.Customer != nil {
 			var customer *models.Customer
@@ -69,7 +70,7 @@ func (p *JobOrderGormRepository) Create(plantID uint, joborderModel *models.JobO
 			return err
 		}
 		for _, item := range joborderModel.Items {
-			item.JobOrderID = joborderModel.ID
+			item.JoborderID = joborderModel.ID
 		}
 		if err := tx.Omit(clause.Associations).Create(&joborderModel.Items).Error; err != nil {
 			return err
@@ -82,8 +83,8 @@ func (p *JobOrderGormRepository) Create(plantID uint, joborderModel *models.JobO
 	return err
 }
 
-func (p *JobOrderGormRepository) GetByID(plantID uint, id uint) (*models.JobOrder, error) {
-	var joborderModel *models.JobOrder
+func (p *JoborderGormRepository) GetByID(plantID uint, id uint) (*models.Joborder, error) {
+	var joborderModel *models.Joborder
 	if err := p.db.Where("plant_id = ?", plantID).Preload("Customer").Preload("Items.Product").First(&joborderModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get joborder by ID")
 		return nil, err
@@ -91,7 +92,7 @@ func (p *JobOrderGormRepository) GetByID(plantID uint, id uint) (*models.JobOrde
 	return joborderModel, nil
 }
 
-func (p *JobOrderGormRepository) Update(plantID uint, joborderModel *models.JobOrder) error {
+func (p *JoborderGormRepository) Update(plantID uint, joborderModel *models.Joborder) error {
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		if joborderModel.Customer != nil {
 			var customer *models.Customer
@@ -104,14 +105,14 @@ func (p *JobOrderGormRepository) Update(plantID uint, joborderModel *models.JobO
 			joborderModel.Customer = customer
 		}
 		joborderModel.PlantID = plantID
-		if err := tx.Where("job_order_id = ?", joborderModel.ID).Delete(&models.JobOrderItem{}).Error; err != nil {
+		if err := tx.Where("job_order_id = ?", joborderModel.ID).Delete(&models.JoborderItem{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Omit("Items").Save(&joborderModel).Error; err != nil {
 			return err
 		}
 		for _, item := range joborderModel.Items {
-			item.JobOrderID = joborderModel.ID
+			item.JoborderID = joborderModel.ID
 		}
 		if err := tx.Omit(clause.Associations).Create(&joborderModel.Items).Error; err != nil {
 			return err
@@ -124,9 +125,9 @@ func (p *JobOrderGormRepository) Update(plantID uint, joborderModel *models.JobO
 	return err
 }
 
-func (p *JobOrderGormRepository) Delete(plantID uint, id uint) error {
+func (p *JoborderGormRepository) Delete(plantID uint, id uint) error {
 	return p.db.Transaction(func(tx *gorm.DB) error {
-		var joborderModel models.JobOrder
+		var joborderModel models.Joborder
 		if err := tx.Where("plant_id = ?", plantID).First(&joborderModel, id).Error; err != nil {
 			log.Debug().Err(err).Msg("Failed to get joborder by ID")
 			return err
@@ -139,9 +140,9 @@ func (p *JobOrderGormRepository) Delete(plantID uint, id uint) error {
 	})
 }
 
-func (p *JobOrderGormRepository) DeleteMulti(plantID uint, ids []uint) error {
+func (p *JoborderGormRepository) DeleteMulti(plantID uint, ids []uint) error {
 	return p.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("plant_id = ?", plantID).Where("id IN ?", ids).Delete(&models.JobOrder{}).Error; err != nil {
+		if err := tx.Where("plant_id = ?", plantID).Where("id IN ?", ids).Delete(&models.Joborder{}).Error; err != nil {
 			log.Error().Err(err).Msg("Failed to delete joborders")
 			return err
 		}
@@ -149,9 +150,9 @@ func (p *JobOrderGormRepository) DeleteMulti(plantID uint, ids []uint) error {
 	})
 }
 
-func (p *JobOrderGormRepository) ExistsByID(plantID uint, ID uint) bool {
+func (p *JoborderGormRepository) ExistsByItemId(jororderID uint, ID uint) bool {
 	var count int64
-	query := p.db.Model(&models.JobOrder{}).Where("plant_id = ?", plantID).Where("id = ?", ID)
+	query := p.db.Model(&models.JoborderItem{}).Where("joborder_id = ?", jororderID).Where("id = ?", ID)
 	if err := query.Count(&count).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to count by id")
 		return false
@@ -159,9 +160,19 @@ func (p *JobOrderGormRepository) ExistsByID(plantID uint, ID uint) bool {
 	return count > 0
 }
 
-func (p *JobOrderGormRepository) ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool {
+func (p *JoborderGormRepository) ExistsByID(plantID uint, ID uint) bool {
 	var count int64
-	query := p.db.Model(&models.JobOrder{}).Where("plant_id = ?", plantID).Where("order_no = ?", orderNo)
+	query := p.db.Model(&models.Joborder{}).Where("plant_id = ?", plantID).Where("id = ?", ID)
+	if err := query.Count(&count).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to count by id")
+		return false
+	}
+	return count > 0
+}
+
+func (p *JoborderGormRepository) ExistsByOrderNo(plantID uint, orderNo string, ID uint) bool {
+	var count int64
+	query := p.db.Model(&models.Joborder{}).Where("plant_id = ?", plantID).Where("order_no = ?", orderNo)
 	if ID > 0 {
 		query = query.Where("ID <> ?", ID)
 	}

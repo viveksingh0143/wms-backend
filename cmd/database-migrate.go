@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	adminModels "star-wms/app/admin/models"
 	baseModels "star-wms/app/base/models"
+	warehouseModels "star-wms/app/warehouse/models"
 	"star-wms/configs"
 	"time"
 )
@@ -39,8 +40,12 @@ var databaseMigrateCmd = &cobra.Command{
 			&baseModels.Container{},
 			&baseModels.Machine{},
 			&baseModels.Customer{},
-			&baseModels.JobOrder{},
-			&baseModels.JobOrderItem{},
+			&baseModels.Joborder{},
+			&baseModels.JoborderItem{},
+			&warehouseModels.Batchlabel{},
+			&warehouseModels.BarcodeSticker{},
+			&warehouseModels.Inventory{},
+			&warehouseModels.InventoryTransaction{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 
