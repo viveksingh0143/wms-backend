@@ -27,6 +27,7 @@ import (
 	baseService "star-wms/app/base/service"
 	"star-wms/app/warehouse/handlers/batchlabel"
 	"star-wms/app/warehouse/handlers/inventory"
+	"star-wms/app/warehouse/handlers/sticker"
 	warehouseRepository "star-wms/app/warehouse/repository"
 	warehouseService "star-wms/app/warehouse/service"
 	"star-wms/configs"
@@ -76,6 +77,8 @@ type AppContainer struct {
 	BatchlabelRepo       warehouseRepository.BatchlabelRepository
 	BatchlabelService    warehouseService.BatchlabelService
 	BatchlabelHandler    *batchlabel.Handler
+	StickerRepo          warehouseRepository.StickerRepository
+	StickerHandler       *sticker.Handler
 	InventoryRepo        warehouseRepository.InventoryRepository
 	InventoryService     warehouseService.InventoryService
 	InventoryHandler     *inventory.Handler
@@ -134,8 +137,10 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	joborderHandler := joborder.NewJoborderHandler(joborderService)
 
 	batchlabelRepo := warehouseRepository.NewBatchlabelGormRepository(db)
-	batchlabelService := warehouseService.NewBatchlabelService(batchlabelRepo, customerService, productService, machineService, joborderService)
+	stickerRepo := warehouseRepository.NewStickerGormRepository(db)
+	batchlabelService := warehouseService.NewBatchlabelService(batchlabelRepo, stickerRepo, customerService, productService, machineService, joborderService)
 	batchlabelHandler := batchlabel.NewBatchlabelHandler(batchlabelService)
+	stickerHandler := sticker.NewStickerHandler(batchlabelService)
 
 	inventoryRepo := warehouseRepository.NewInventoryGormRepository(db)
 	inventoryService := warehouseService.NewInventoryService(inventoryRepo, productService, storeService)
@@ -185,6 +190,8 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		BatchlabelRepo:       batchlabelRepo,
 		BatchlabelService:    batchlabelService,
 		BatchlabelHandler:    batchlabelHandler,
+		StickerRepo:          stickerRepo,
+		StickerHandler:       stickerHandler,
 		InventoryRepo:        inventoryRepo,
 		InventoryService:     inventoryService,
 		InventoryHandler:     inventoryHandler,

@@ -7,6 +7,7 @@ import (
 	"star-wms/app/warehouse/dto/batchlabel"
 	"star-wms/app/warehouse/models"
 	commonModels "star-wms/core/common/requests"
+	"star-wms/core/types"
 	"star-wms/core/utils"
 )
 
@@ -14,11 +15,13 @@ type BatchlabelRepository interface {
 	GetAll(plantID uint, filter batchlabel.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Batchlabel, int64, error)
 	Create(plantID uint, batchlabel *models.Batchlabel) error
 	GetByID(plantID uint, id uint) (*models.Batchlabel, error)
+	GetByBatchNo(plantID uint, batchNo string, needCustomer bool, needProduct bool, needMachine bool, needJoborder bool, needJoborderItem bool, needStickers bool) (*models.Batchlabel, error)
 	Update(plantID uint, batchlabel *models.Batchlabel) error
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
 	ExistsByID(plantID uint, ID uint) bool
 	ExistsByBatchNo(plantID uint, batchNo string, ID uint) bool
+	MarkProcessStatusAs(plantID uint, ID uint, status types.ProcessStatus) error
 }
 
 type BatchlabelGormRepository struct {
@@ -95,8 +98,36 @@ func (p *BatchlabelGormRepository) Create(plantID uint, batchlabelModel *models.
 
 func (p *BatchlabelGormRepository) GetByID(plantID uint, id uint) (*models.Batchlabel, error) {
 	var batchlabelModel *models.Batchlabel
-	if err := p.db.Where("plant_id = ?", plantID).Preload("Joborder.Items").Preload("JoborderItem").Preload("Customer").Preload("Product").Preload("Machine").Preload("Stickers").First(&batchlabelModel, id).Error; err != nil {
+	if err := p.db.Where("plant_id = ?", plantID).Preload("Joborder.Items").Preload("JoborderItem").Preload("Customer").Preload("Product.Ingredients.Ingredient").Preload("Machine").First(&batchlabelModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get batchlabel by ID")
+		return nil, err
+	}
+	return batchlabelModel, nil
+}
+
+func (p *BatchlabelGormRepository) GetByBatchNo(plantID uint, batchNo string, needCustomer bool, needProduct bool, needMachine bool, needJoborder bool, needJoborderItem bool, needStickers bool) (*models.Batchlabel, error) {
+	var batchlabelModel *models.Batchlabel
+	query := p.db.Where("plant_id = ?", plantID)
+	if needCustomer {
+		query = query.Preload("Customer")
+	}
+	if needProduct {
+		query = query.Preload("Product")
+	}
+	if needMachine {
+		query = query.Preload("Machine")
+	}
+	if needJoborder {
+		query = query.Preload("Joborder")
+	}
+	if needJoborderItem {
+		query = query.Preload("JoborderItem")
+	}
+	if needStickers {
+		query = query.Preload("Stickers")
+	}
+	if err := query.Where("batch_no", batchNo).First(&batchlabelModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get batchlabel by batch no")
 		return nil, err
 	}
 	return batchlabelModel, nil
@@ -189,4 +220,14 @@ func (p *BatchlabelGormRepository) ExistsByBatchNo(plantID uint, batchNo string,
 		return false
 	}
 	return count > 0
+}
+
+func (p *BatchlabelGormRepository) MarkProcessStatusAs(plantID uint, ID uint, status types.ProcessStatus) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&models.Batchlabel{}).Where("plant_id = ?", plantID).Where("id = ?", ID).Update("process_status", status).Error
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update batchlabel")
+		}
+		return err
+	})
 }

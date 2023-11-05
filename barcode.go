@@ -12,7 +12,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-func main() {
+func generatebarcode() {
 	const width = 400
 	const height = 200
 	const qrSquare = 50

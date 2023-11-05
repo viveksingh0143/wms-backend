@@ -44,7 +44,8 @@ var databaseMigrateCmd = &cobra.Command{
 			&baseModels.Joborder{},
 			&baseModels.JoborderItem{},
 			&warehouseModels.Batchlabel{},
-			&warehouseModels.BarcodeSticker{},
+			&warehouseModels.Sticker{},
+			&warehouseModels.StickerItem{},
 			&warehouseModels.Inventory{},
 			&warehouseModels.InventoryTransaction{},
 		)

@@ -33,20 +33,40 @@ type Batchlabel struct {
 	JoborderItem    *baseModels.JoborderItem `gorm:"foreignKey:JoborderItemID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	PlantID         uint                     `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Plant           adminModels.Plant        `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Stickers        []*BarcodeSticker        `gorm:"foreignKey:BatchlabelID;constraint:OnDelete:CASCADE;"`
+	Stickers        []*Sticker               `gorm:"foreignKey:BatchlabelID;constraint:OnDelete:CASCADE;"`
 }
 
-type BarcodeSticker struct {
+type Sticker struct {
 	models.MyModel
-	Barcode      string     `gorm:"type:varchar(255);uniqueIndex;not null;"`
-	PacketNo     string     `gorm:"type:varchar(255);not null;"`
-	PrintCount   int32      `gorm:"type:int;default:0"`
-	Shift        string     `gorm:"type:varchar(255);not null;"`
-	ProductLine  string     `gorm:"type:varchar(255);not null;"`
-	BatchNo      string     `gorm:"type:varchar(255);not null;"`
-	MachineNo    string     `gorm:"type:varchar(255);not null;"`
-	IsUsed       bool       `gorm:"default:false"`
-	Quantity     string     `gorm:"type:varchar(255);not null;"`
-	BatchlabelID uint       `gorm:"not null;index;constraint:OnDelete:CASCADE;"`
-	Batchlabel   Batchlabel `gorm:"foreignKey:BatchlabelID;"`
+	Barcode        string              `gorm:"type:varchar(255);uniqueIndex;not null;"`
+	PacketNo       string              `gorm:"type:varchar(255);not null;"`
+	PrintCount     int32               `gorm:"type:int;default:0"`
+	Shift          string              `gorm:"type:varchar(255);not null;"`
+	ProductLine    string              `gorm:"type:varchar(255);not null;"`
+	BatchNo        string              `gorm:"type:varchar(255);not null;"`
+	MachineNo      string              `gorm:"type:varchar(255);not null;"`
+	IsUsed         bool                `gorm:"default:false"`
+	UnitWeightLine string              `gorm:"type:varchar(255);not null;"`
+	QuantityLine   string              `gorm:"type:varchar(255);not null;"`
+	Quantity       float64             `gorm:"not null"`
+	Supervisor     string              `gorm:"type:varchar(255);not null;"`
+	ProductID      uint                `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Product        *baseModels.Product `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	BatchlabelID   uint                `gorm:"not null;index;constraint:OnDelete:CASCADE;"`
+	Batchlabel     *Batchlabel         `gorm:"foreignKey:BatchlabelID;"`
+	StickerItems   []*StickerItem      `gorm:"foreignKey:StickerID;constraint:OnDelete:CASCADE;"`
+	PlantID        uint                `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Plant          adminModels.Plant   `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+type StickerItem struct {
+	models.MyModel
+	ProductID    uint                `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Product      *baseModels.Product `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Quantity     float64             `gorm:"not null"`
+	BatchNo      string              `gorm:"type:varchar(255);not null;"`
+	StickerID    uint                `gorm:"not null;index;constraint:OnDelete:CASCADE;"`
+	Sticker      *Sticker            `gorm:"foreignKey:StickerID;"`
+	BatchlabelID uint                `gorm:"index;constraint:OnDelete:CASCADE;"`
+	Batchlabel   *Batchlabel         `gorm:"foreignKey:BatchlabelID;"`
 }

@@ -30,43 +30,40 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 					"message": "pong",
 				})
 			})
+		}
 
-			authRoutes := api.Group("/auth")
-			{
-				handlers.SetupAuthRoutes(authRoutes, receiver.AuthHandler)
-			}
+		authRoutes := api.Group("/auth")
+		{
+			handlers.SetupAuthRoutes(authRoutes, receiver.AuthHandler)
+		}
 
-			adminRoutes := api.Group("/admin", middlewares.AuthRequiredMiddleware(receiver.AuthService))
-			{
-				permission.SetupPermissionRoutes(adminRoutes, receiver.PermissionHandler)
-				role.SetupRoleRoutes(adminRoutes, receiver.RoleHandler)
-				plant.SetupPlantRoutes(adminRoutes, receiver.PlantHandler)
-				user.SetupUserRoutes(adminRoutes, receiver.UserHandler)
-			}
+		adminRoutes := api.Group("/admin", middlewares.AuthRequiredMiddleware(receiver.AuthService))
+		{
+			permission.SetupPermissionRoutes(adminRoutes, receiver.PermissionHandler)
+			role.SetupRoleRoutes(adminRoutes, receiver.RoleHandler)
+			plant.SetupPlantRoutes(adminRoutes, receiver.PlantHandler)
+			user.SetupUserRoutes(adminRoutes, receiver.UserHandler)
+		}
 
-			baseRoutes := api.Group("/base", middlewares.AuthRequiredMiddleware(receiver.AuthService))
-			{
-				category.SetupCategoryRoutes(baseRoutes, receiver.CategoryHandler)
-				plantBasedRoutes := baseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
-				{
-					product.SetupProductRoutes(plantBasedRoutes, receiver.ProductHandler)
-					store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler, receiver.StorelocationHandler)
-					container.SetupContainerRoutes(plantBasedRoutes, receiver.ContainerHandler)
-					machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
-					customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)
-					joborder.SetupJoborderRoutes(plantBasedRoutes, receiver.JoborderHandler)
-					batchlabel.SetupBatchlabelRoutes(plantBasedRoutes, receiver.BatchlabelHandler)
-				}
-			}
+		baseRoutes := api.Group("/base", middlewares.AuthRequiredMiddleware(receiver.AuthService))
+		{
+			category.SetupCategoryRoutes(baseRoutes, receiver.CategoryHandler)
+			product.SetupProductRoutes(baseRoutes, receiver.ProductHandler)
 
-			warehouseRoutes := api.Group("/warehouse", middlewares.AuthRequiredMiddleware(receiver.AuthService))
+			plantBasedRoutes := baseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
 			{
-				warehousePlantBasedRoutes := warehouseRoutes.Group("/", middlewares.PlantRequiredMiddleware(receiver.PlantService))
-				{
-					batchlabel.SetupBatchlabelRoutes(warehousePlantBasedRoutes, receiver.BatchlabelHandler)
-					inventory.SetupInventoryRoutes(warehousePlantBasedRoutes, receiver.InventoryHandler)
-				}
+				store.SetupStoreRoutes(plantBasedRoutes, receiver.StoreHandler, receiver.StorelocationHandler)
+				container.SetupContainerRoutes(plantBasedRoutes, receiver.ContainerHandler)
+				machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
+				customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)
+				joborder.SetupJoborderRoutes(plantBasedRoutes, receiver.JoborderHandler)
 			}
+		}
+
+		warehousePlantBasedRoutes := api.Group("/warehouse", middlewares.AuthRequiredMiddleware(receiver.AuthService), middlewares.PlantRequiredMiddleware(receiver.PlantService))
+		{
+			batchlabel.SetupBatchlabelRoutes(warehousePlantBasedRoutes, receiver.BatchlabelHandler, receiver.StickerHandler)
+			inventory.SetupInventoryRoutes(warehousePlantBasedRoutes, receiver.InventoryHandler)
 		}
 	}
 }

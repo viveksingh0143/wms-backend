@@ -14,7 +14,7 @@ type Filter struct {
 	ProcessStatus types.ProcessStatus `form:"process_status" db:"process_status" validate:"omitempty,gt=0"`
 }
 
-type BarcodeStickerFilter struct {
+type StickerFilter struct {
 	Query        string `form:"query" db:"barcode,packet_no,shift,product_line,batch_no,machine_no" whereType:"like" binding:"omitempty,max=100"`
 	ID           uint   `form:"id" db:"id" binding:"omitempty,gt=0"`
 	Barcode      string `form:"barcode" db:"barcode" binding:"omitempty,max=100"`
@@ -24,5 +24,5 @@ type BarcodeStickerFilter struct {
 	BatchNo      string `form:"batch_no" db:"batch_no" binding:"omitempty,max=100"`
 	MachineNo    string `form:"machine_no" db:"machine_no" binding:"omitempty,max=100"`
 	IsUsed       bool   `form:"is_used" db:"is_used" binding:"omitempty,max=100"`
-	BatchLabelID *uint  `form:"BatchlabelID" db:"BatchlabelID" binding:"omitempty,gt=0"`
+	BatchLabelID *uint  `form:"batchlabel_id" db:"batchlabel_id" binding:"omitempty,gt=0"`
 }
