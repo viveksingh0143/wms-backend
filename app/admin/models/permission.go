@@ -6,7 +6,7 @@ import (
 
 type Permission struct {
 	models.MyModel
-	Group      string `gorm:"type:varchar(100);not null" json:"group"`
+	GroupName  string `gorm:"type:varchar(100);not null" json:"group_name"`
 	ModuleName string `gorm:"type:varchar(100);uniqueIndex;not null" json:"module_name"`
 	ReadPerm   bool   `gorm:"default:false" json:"read_perm"`
 	CreatePerm bool   `gorm:"default:false" json:"create_perm"`

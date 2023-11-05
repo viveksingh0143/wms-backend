@@ -81,7 +81,7 @@ func (s *DefaultPermissionService) ExistsByModuleName(moduleName string, ID uint
 
 func (s *DefaultPermissionService) ToModel(permissionForm *permission.Form) *models.Permission {
 	result := &models.Permission{
-		Group:      permissionForm.Group,
+		GroupName:  permissionForm.GroupName,
 		ModuleName: permissionForm.ModuleName,
 		ReadPerm:   permissionForm.ReadPerm,
 		CreatePerm: permissionForm.CreatePerm,
@@ -95,7 +95,7 @@ func (s *DefaultPermissionService) ToModel(permissionForm *permission.Form) *mod
 }
 
 func (s *DefaultPermissionService) FormToModel(permissionForm *permission.Form, permModel *models.Permission) {
-	permModel.Group = permissionForm.Group
+	permModel.GroupName = permissionForm.GroupName
 	permModel.ModuleName = permissionForm.ModuleName
 	permModel.ReadPerm = permissionForm.ReadPerm
 	permModel.CreatePerm = permissionForm.CreatePerm
@@ -108,7 +108,7 @@ func (s *DefaultPermissionService) FormToModel(permissionForm *permission.Form, 
 func (s *DefaultPermissionService) ToForm(permModel *models.Permission) *permission.Form {
 	result := &permission.Form{
 		ID:         permModel.ID,
-		Group:      permModel.Group,
+		GroupName:  permModel.GroupName,
 		ModuleName: permModel.ModuleName,
 		ReadPerm:   permModel.ReadPerm,
 		CreatePerm: permModel.CreatePerm,
