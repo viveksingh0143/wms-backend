@@ -13,5 +13,6 @@ func SetupInventoryRoutes(r *gin.RouterGroup, inventoryHandler *Handler) {
 		api.GET("/:id", inventoryHandler.Get)
 		api.PUT("/:id", inventoryHandler.Update)
 		api.DELETE("/:id", inventoryHandler.Delete)
+		api.POST("/rawmaterial/stockin", inventoryHandler.RawMaterialStockin)
 	}
 }

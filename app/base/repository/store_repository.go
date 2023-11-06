@@ -11,6 +11,7 @@ import (
 )
 
 type StoreRepository interface {
+	GetAllByApprover(plantID uint, userID uint) ([]*models.Store, error)
 	GetAll(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Store, int64, error)
 	Create(plantID uint, store *models.Store) error
 	GetByID(plantID uint, id uint) (*models.Store, error)
@@ -28,6 +29,20 @@ type StoreGormRepository struct {
 
 func NewStoreGormRepository(database *gorm.DB) StoreRepository {
 	return &StoreGormRepository{db: database}
+}
+
+func (p *StoreGormRepository) GetAllByApprover(plantID uint, userID uint) ([]*models.Store, error) {
+	var stores []*models.Store
+
+	if err := p.db.Model(&models.Store{}).
+		Joins("JOIN store_approvers on store_approvers.store_id = stores.id").
+		Where("store_approvers.user_id = ?", userID).
+		Where("stores.plant_id = ?", plantID).
+		Find(&stores).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to get all stores with user approval authority")
+		return nil, err
+	}
+	return stores, nil
 }
 
 func (p *StoreGormRepository) GetAll(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Store, int64, error) {

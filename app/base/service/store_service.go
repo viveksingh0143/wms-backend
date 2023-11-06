@@ -12,6 +12,7 @@ import (
 )
 
 type StoreService interface {
+	GetAllStoresByApprover(plantID uint, userID uint) ([]*store.Form, error)
 	GetAllStores(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*store.Form, int64, error)
 	CreateStore(plantID uint, storeForm *store.Form) error
 	GetStoreByID(plantID uint, id uint) (*store.Form, error)
@@ -36,6 +37,14 @@ type DefaultStoreService struct {
 
 func NewStoreService(repo repository.StoreRepository, categoryService CategoryService, userService service.UserService) StoreService {
 	return &DefaultStoreService{repo: repo, categoryService: categoryService, userService: userService}
+}
+
+func (s *DefaultStoreService) GetAllStoresByApprover(plantID uint, userID uint) ([]*store.Form, error) {
+	data, err := s.repo.GetAllByApprover(plantID, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToFormSlice(plantID, data), err
 }
 
 func (s *DefaultStoreService) GetAllStores(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*store.Form, int64, error) {

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"star-wms/app/base/dto/container"
+	baseModels "star-wms/app/base/models"
 	baseService "star-wms/app/base/service"
 	"star-wms/app/warehouse/dto/inventory"
 	"star-wms/app/warehouse/models"
@@ -22,16 +24,19 @@ type InventoryService interface {
 	ToForm(plantID uint, inventoryModel *models.Inventory) *inventory.Form
 	ToFormSlice(plantID uint, inventoryModels []*models.Inventory) []*inventory.Form
 	ToModelSlice(plantID uint, inventoryForms []*inventory.Form) []*models.Inventory
+
+	CreateRawMaterialStockIn(plantID uint, inventoryForm *inventory.RawMaterialStockInForm) error
 }
 
 type DefaultInventoryService struct {
-	repo           repository.InventoryRepository
-	productService baseService.ProductService
-	storeService   baseService.StoreService
+	repo             repository.InventoryRepository
+	productService   baseService.ProductService
+	storeService     baseService.StoreService
+	containerService baseService.ContainerService
 }
 
-func NewInventoryService(repo repository.InventoryRepository, productService baseService.ProductService, storeService baseService.StoreService) InventoryService {
-	return &DefaultInventoryService{repo: repo, productService: productService, storeService: storeService}
+func NewInventoryService(repo repository.InventoryRepository, productService baseService.ProductService, storeService baseService.StoreService, containerService baseService.ContainerService) InventoryService {
+	return &DefaultInventoryService{repo: repo, productService: productService, storeService: storeService, containerService: containerService}
 }
 
 func (s *DefaultInventoryService) GetAllInventorys(plantID uint, filter inventory.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*inventory.Form, int64, error) {
@@ -51,6 +56,46 @@ func (s *DefaultInventoryService) CreateInventory(plantID uint, inventoryForm *i
 	}
 	inventoryModel := s.ToModel(plantID, inventoryForm)
 	return s.repo.Create(plantID, inventoryModel)
+}
+
+func (s *DefaultInventoryService) CreateRawMaterialStockIn(plantID uint, inventoryForm *inventory.RawMaterialStockInForm) error {
+	if !s.storeService.ExistsById(plantID, inventoryForm.Store.ID) {
+		return responses.NewInputError("store.id", "store not exists", inventoryForm.Store.ID)
+	}
+	if !s.productService.ExistsById(inventoryForm.Product.ID) {
+		return responses.NewInputError("product.id", "product not exists", inventoryForm.Product.ID)
+	}
+	if inventoryForm.Container.Code == "" {
+		return responses.NewInputError("container.code", "code is required", inventoryForm.Container.Code)
+	}
+	var containerForm *container.Form
+	if !s.containerService.ExistsByCode(plantID, inventoryForm.Container.Code, 0) {
+		containerForm = &container.Form{
+			PlantID:       plantID,
+			ContainerType: string(baseModels.Pallet),
+			Name:          inventoryForm.Container.Code,
+			Code:          inventoryForm.Container.Code,
+		}
+		err := s.containerService.CreateContainer(plantID, containerForm)
+		if err != nil {
+			return err
+		}
+	}
+	containerForm, err := s.containerService.GetContainerByCode(plantID, inventoryForm.Container.Code, false, false, false, false)
+	if err != nil {
+		return err
+	}
+	if containerForm.StockLevel != baseModels.Empty {
+		return responses.NewInputError("container.code", "is not empty", inventoryForm.Container.Code)
+	}
+	storeModel := s.storeService.ToModel(plantID, inventoryForm.Store)
+	containerModel := s.containerService.ToModel(plantID, containerForm)
+	contentModel := &baseModels.ContainerContent{
+		ProductID: inventoryForm.Product.ID,
+		Product:   s.productService.ToModel(inventoryForm.Product),
+		Quantity:  inventoryForm.Quantity,
+	}
+	return s.repo.CreateRawMaterialStockIn(plantID, storeModel, containerModel, contentModel)
 }
 
 func (s *DefaultInventoryService) GetInventoryByID(plantID uint, id uint) (*inventory.Form, error) {

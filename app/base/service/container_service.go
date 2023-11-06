@@ -2,6 +2,7 @@ package service
 
 import (
 	"star-wms/app/base/dto/container"
+	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	"star-wms/app/base/repository"
 	commonModels "star-wms/core/common/requests"
@@ -9,9 +10,11 @@ import (
 )
 
 type ContainerService interface {
+	GetAllContainersRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
 	GetAllContainers(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
 	CreateContainer(plantID uint, containerForm *container.Form) error
 	GetContainerByID(plantID uint, id uint) (*container.Form, error)
+	GetContainerByCode(plantID uint, code string, needContents bool, needProduct bool, needStore bool, needLocation bool) (*container.Form, error)
 	UpdateContainer(plantID uint, id uint, containerForm *container.Form) error
 	DeleteContainer(plantID uint, id uint) error
 	DeleteContainers(plantID uint, ids []uint) error
@@ -20,19 +23,32 @@ type ContainerService interface {
 	ExistsByCode(plantID uint, code string, ID uint) bool
 	ToModel(plantID uint, containerForm *container.Form) *models.Container
 	FormToModel(plantID uint, containerForm *container.Form, containerModel *models.Container)
+	ToModelSlice(plantID uint, containerForms []*container.Form) []*models.Container
 	ToForm(plantID uint, containerModel *models.Container) *container.Form
 	ToFormSlice(plantID uint, containerModels []*models.Container) []*container.Form
-	ToModelSlice(plantID uint, containerForms []*container.Form) []*models.Container
+	ToContentForm(plantID uint, containerModel *models.ContainerContent) *container.ContentForm
+	ToContentFormSlice(plantID uint, containerModels []*models.ContainerContent) []*container.ContentForm
+	ApproveContainer(plantID uint, id uint) error
+	ApproveContainers(plantID uint, ids []uint) error
 }
 
 type DefaultContainerService struct {
-	repo           repository.ContainerRepository
-	storeService   StoreService
-	productService ProductService
+	repo                 repository.ContainerRepository
+	storeService         StoreService
+	storelocationService StorelocationService
+	productService       ProductService
 }
 
-func NewContainerService(repo repository.ContainerRepository, storeService StoreService, productService ProductService) ContainerService {
-	return &DefaultContainerService{repo: repo, storeService: storeService, productService: productService}
+func NewContainerService(repo repository.ContainerRepository, storeService StoreService, storelocationService StorelocationService, productService ProductService) ContainerService {
+	return &DefaultContainerService{repo: repo, storeService: storeService, storelocationService: storelocationService, productService: productService}
+}
+
+func (s *DefaultContainerService) GetAllContainersRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
+	data, count, err := s.repo.GetAllRequiredApproval(plantID, stores, filter, pagination, sorting)
+	if err != nil {
+		return nil, count, err
+	}
+	return s.ToFormSlice(plantID, data), count, err
 }
 
 func (s *DefaultContainerService) GetAllContainers(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
@@ -62,6 +78,14 @@ func (s *DefaultContainerService) GetContainerByID(plantID uint, id uint) (*cont
 	return s.ToForm(plantID, data), nil
 }
 
+func (s *DefaultContainerService) GetContainerByCode(plantID uint, code string, needContents bool, needProduct bool, needStore bool, needLocation bool) (*container.Form, error) {
+	data, err := s.repo.GetByCode(plantID, code, needContents, needProduct, needStore, needLocation)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(plantID, data), nil
+}
+
 func (s *DefaultContainerService) UpdateContainer(plantID uint, id uint, containerForm *container.Form) error {
 	if s.ExistsByName(plantID, containerForm.Name, id) {
 		return responses.NewInputError("name", "already exists", containerForm.Name)
@@ -83,6 +107,14 @@ func (s *DefaultContainerService) DeleteContainer(plantID uint, id uint) error {
 
 func (s *DefaultContainerService) DeleteContainers(plantID uint, ids []uint) error {
 	return s.repo.DeleteMulti(plantID, ids)
+}
+
+func (s *DefaultContainerService) ApproveContainer(plantID uint, id uint) error {
+	return s.repo.Approve(plantID, id)
+}
+
+func (s *DefaultContainerService) ApproveContainers(plantID uint, ids []uint) error {
+	return s.repo.ApproveMulti(plantID, ids)
 }
 
 func (s *DefaultContainerService) ExistsById(plantID uint, ID uint) bool {
@@ -115,6 +147,9 @@ func (s *DefaultContainerService) ToModel(plantID uint, containerForm *container
 	if containerForm.Store != nil {
 		containerModel.Store = s.storeService.ToModel(plantID, containerForm.Store)
 	}
+	if containerForm.Storelocation != nil {
+		containerModel.Storelocation = s.storelocationService.ToModel(plantID, containerForm.Storelocation.StoreID, containerForm.Storelocation)
+	}
 	if containerForm.Product != nil {
 		containerModel.Product = s.productService.ToModel(containerForm.Product)
 	}
@@ -134,11 +169,19 @@ func (s *DefaultContainerService) FormToModel(plantID uint, containerForm *conta
 	if containerForm.StockLevel != "" {
 		containerModel.StockLevel = containerForm.StockLevel
 	}
+
 	if containerForm.Store != nil {
 		containerModel.Store = s.storeService.ToModel(plantID, containerForm.Store)
 	} else {
 		containerModel.Store = nil
 		containerModel.StoreID = nil
+	}
+
+	if containerForm.Storelocation != nil {
+		containerModel.Storelocation = s.storelocationService.ToModel(plantID, containerForm.Storelocation.StoreID, containerForm.Storelocation)
+	} else {
+		containerModel.Storelocation = nil
+		containerModel.StorelocationID = nil
 	}
 
 	if containerForm.Product != nil {
@@ -147,6 +190,14 @@ func (s *DefaultContainerService) FormToModel(plantID uint, containerForm *conta
 		containerModel.Product = nil
 		containerModel.ProductID = nil
 	}
+}
+
+func (s *DefaultContainerService) ToModelSlice(plantID uint, containerForms []*container.Form) []*models.Container {
+	data := make([]*models.Container, 0)
+	for _, containerForm := range containerForms {
+		data = append(data, s.ToModel(plantID, containerForm))
+	}
+	return data
 }
 
 func (s *DefaultContainerService) ToForm(plantID uint, containerModel *models.Container) *container.Form {
@@ -161,11 +212,17 @@ func (s *DefaultContainerService) ToForm(plantID uint, containerModel *models.Co
 		Approved:      containerModel.Approved,
 	}
 	containerForm.PlantID = containerModel.PlantID
+	if containerModel.Storelocation != nil {
+		containerForm.Storelocation = s.storelocationService.ToForm(plantID, containerForm.Storelocation.StoreID, containerModel.Storelocation)
+	}
 	if containerModel.Store != nil {
 		containerForm.Store = s.storeService.ToForm(plantID, containerModel.Store)
 	}
 	if containerModel.Product != nil {
 		containerForm.Product = s.productService.ToForm(containerModel.Product)
+	}
+	if containerModel.Contents != nil {
+		containerForm.Contents = s.ToContentFormSlice(plantID, containerModel.Contents)
 	}
 	return containerForm
 }
@@ -178,10 +235,22 @@ func (s *DefaultContainerService) ToFormSlice(plantID uint, containerModels []*m
 	return data
 }
 
-func (s *DefaultContainerService) ToModelSlice(plantID uint, containerForms []*container.Form) []*models.Container {
-	data := make([]*models.Container, 0)
-	for _, containerForm := range containerForms {
-		data = append(data, s.ToModel(plantID, containerForm))
+func (s *DefaultContainerService) ToContentForm(plantID uint, contentModel *models.ContainerContent) *container.ContentForm {
+	contentForm := &container.ContentForm{
+		ID:       contentModel.ID,
+		Quantity: contentModel.Quantity,
+	}
+	contentForm.PlantID = contentModel.PlantID
+	if contentModel.Product != nil {
+		contentForm.Product = s.productService.ToForm(contentModel.Product)
+	}
+	return contentForm
+}
+
+func (s *DefaultContainerService) ToContentFormSlice(plantID uint, contentModels []*models.ContainerContent) []*container.ContentForm {
+	data := make([]*container.ContentForm, 0)
+	for _, contentModel := range contentModels {
+		data = append(data, s.ToContentForm(plantID, contentModel))
 	}
 	return data
 }

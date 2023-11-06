@@ -18,7 +18,7 @@ type Inventory struct {
 	Plant     adminModels.Plant   `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-type InventoryTransaction struct {
+type StockMovements struct {
 	models.MyModel
 	StoreID      *uint                 `gorm:"index;not null;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	Store        *baseModels.Store     `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`

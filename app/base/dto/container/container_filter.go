@@ -16,4 +16,5 @@ type Filter struct {
 	Approved      bool         `form:"approved" db:"approved" binding:"omitempty"`
 	ProductID     uint         `form:"product_id" db:"product_id" binding:"omitempty,gt=0"`
 	StoreID       uint         `form:"store_id" db:"store_id" binding:"omitempty,gt=0"`
+	StoreIDsIn    []uint       `form:"store_ids_in" db:"store_id" whereType:"IN" binding:"omitempty,gt=0"`
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	baseModels "star-wms/app/base/models"
 	"star-wms/app/warehouse/dto/inventory"
 	"star-wms/app/warehouse/models"
@@ -19,6 +20,7 @@ type InventoryRepository interface {
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
 	ExistsByID(plantID uint, ID uint) bool
+	CreateRawMaterialStockIn(plantID uint, storeModel *baseModels.Store, containerModel *baseModels.Container, contentModel *baseModels.ContainerContent) error
 }
 
 type InventoryGormRepository struct {
@@ -50,6 +52,34 @@ func (p *InventoryGormRepository) GetAll(plantID uint, filter inventory.Filter, 
 	}
 
 	return inventories, count, nil
+}
+
+func (p *InventoryGormRepository) CreateRawMaterialStockIn(plantID uint, storeModel *baseModels.Store, containerModel *baseModels.Container, contentModel *baseModels.ContainerContent) error {
+	err := p.db.Transaction(func(tx *gorm.DB) error {
+		contentModel.ContainerID = containerModel.ID
+		contentModel.PlantID = plantID
+		if err := tx.Omit(clause.Associations).Create(&contentModel).Error; err != nil {
+			return err
+		}
+
+		containerModel.StockLevel = baseModels.Full
+		containerModel.Approved = false
+		containerModel.ProductID = &contentModel.ProductID
+		containerModel.StoreID = &storeModel.ID
+		if err := tx.Model(&containerModel).Updates(map[string]interface{}{
+			"stock_level": baseModels.Full,
+			"approved":    false,
+			"product_id":  &contentModel.ProductID,
+			"store_id":    &storeModel.ID,
+		}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create inventory")
+	}
+	return err
 }
 
 func (p *InventoryGormRepository) Create(plantID uint, inventoryModel *models.Inventory) error {

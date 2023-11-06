@@ -9,6 +9,16 @@ import (
 	"star-wms/core/types"
 )
 
+type RawMaterialStockInForm struct {
+	Store      *store.Form    `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`
+	Product    *product.Form  `json:"product" validationTag:"product.id" validate:"required,validRelationID,structonly"`
+	Quantity   float64        `json:"quantity" validate:"required,lte=10000"`
+	Container  container.Form `json:"container" validate:"required,structonly"`
+	Shift      string         `json:"shift" validate:"required,min=1,max=100"`
+	Supervisor string         `json:"supervisor" validate:"required,min=1,max=100"`
+	BatchNo    string         `json:"batch_no" validate:"required,min=1,max=100"`
+}
+
 type Form struct {
 	ID       uint          `json:"id" binding:"-"`
 	Store    *store.Form   `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`

@@ -38,16 +38,21 @@ var databaseMigrateCmd = &cobra.Command{
 			&baseModels.ProductIngredient{},
 			&baseModels.Store{},
 			&baseModels.Container{},
+			&baseModels.ContainerContent{},
 			&baseModels.Storelocation{},
 			&baseModels.Machine{},
 			&baseModels.Customer{},
 			&baseModels.Joborder{},
 			&baseModels.JoborderItem{},
+			&baseModels.Requisition{},
+			&baseModels.RequisitionItem{},
+			&baseModels.Outwardrequest{},
+			&baseModels.OutwardrequestItem{},
 			&warehouseModels.Batchlabel{},
 			&warehouseModels.Sticker{},
 			&warehouseModels.StickerItem{},
 			&warehouseModels.Inventory{},
-			&warehouseModels.InventoryTransaction{},
+			&warehouseModels.StockMovements{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 

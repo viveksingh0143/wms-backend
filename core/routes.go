@@ -12,10 +12,14 @@ import (
 	"star-wms/app/base/handlers/customer"
 	"star-wms/app/base/handlers/joborder"
 	"star-wms/app/base/handlers/machine"
+	"star-wms/app/base/handlers/outwardrequest"
 	"star-wms/app/base/handlers/product"
+	"star-wms/app/base/handlers/requisition"
 	"star-wms/app/base/handlers/store"
 	"star-wms/app/warehouse/handlers/batchlabel"
 	"star-wms/app/warehouse/handlers/inventory"
+	"star-wms/app/warehouse/handlers/requisitionapproval"
+	"star-wms/app/warehouse/handlers/stockapproval"
 	"star-wms/core/middlewares"
 )
 
@@ -57,6 +61,8 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 				machine.SetupMachineRoutes(plantBasedRoutes, receiver.MachineHandler)
 				customer.SetupCustomerRoutes(plantBasedRoutes, receiver.CustomerHandler)
 				joborder.SetupJoborderRoutes(plantBasedRoutes, receiver.JoborderHandler)
+				requisition.SetupRequisitionRoutes(plantBasedRoutes, receiver.RequisitionHandler)
+				outwardrequest.SetupOutwardrequestRoutes(plantBasedRoutes, receiver.OutwardrequestHandler)
 			}
 		}
 
@@ -64,6 +70,8 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 		{
 			batchlabel.SetupBatchlabelRoutes(warehousePlantBasedRoutes, receiver.BatchlabelHandler, receiver.StickerHandler)
 			inventory.SetupInventoryRoutes(warehousePlantBasedRoutes, receiver.InventoryHandler)
+			stockapproval.SetupStockapprovalsRoutes(warehousePlantBasedRoutes, receiver.StockapprovalHandler)
+			requisitionapproval.SetupRequisitionApprovalsRoutes(warehousePlantBasedRoutes, receiver.RequisitionApprovalHandler)
 		}
 	}
 }

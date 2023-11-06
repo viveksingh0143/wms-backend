@@ -1,11 +1,11 @@
-package inventory
+package requisition
 
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"star-wms/app/admin/dto/plant"
-	"star-wms/app/warehouse/dto/inventory"
-	"star-wms/app/warehouse/service"
+	"star-wms/app/base/dto/requisition"
+	"star-wms/app/base/service"
 	"star-wms/core/auth"
 	"star-wms/core/common/requests"
 	"star-wms/core/common/responses"
@@ -14,21 +14,21 @@ import (
 )
 
 type Handler struct {
-	service service.InventoryService
+	service service.RequisitionService
 }
 
-func NewInventoryHandler(s service.InventoryService) *Handler {
+func NewRequisitionHandler(s service.RequisitionService) *Handler {
 	return &Handler{
 		service: s,
 	}
 }
 
-// List inventories with filter, pagination, and sorting
+// List requisitions with filter, pagination, and sorting
 func (ph *Handler) List(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	var filter inventory.Filter
+	var filter requisition.Filter
 	paginationValue, _ := c.Get("pagination")
 	pagination, _ := paginationValue.(requests.Pagination)
 
@@ -40,45 +40,49 @@ func (ph *Handler) List(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	inventories, totalRecords, err := ph.service.GetAllInventorys(plantForm.ID, filter, pagination, sorting)
+	requisitions, totalRecords, err := ph.service.GetAllRequisitions(plantForm.ID, filter, pagination, sorting)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewPageResponse(inventories, totalRecords, pagination.Page, pagination.PageSize))
+	c.JSON(http.StatusOK, responses.NewPageResponse(requisitions, totalRecords, pagination.Page, pagination.PageSize))
 }
 
-// Create a new inventory
+// Create a new requisition
 func (ph *Handler) Create(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	var inventoryForm inventory.Form
-	if err := c.ShouldBindJSON(&inventoryForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, inventoryForm)
+	var requisitionForm requisition.Form
+	if err := c.ShouldBindJSON(&requisitionForm); err != nil {
+		resp := responses.NewValidationErrorResponse(err, requisitionForm)
 		c.JSON(resp.Status, resp)
 		return
 	}
 
 	validate := validation.GetValidator()
 
-	if err := validate.Struct(inventoryForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, inventoryForm)
+	if requisitionForm.Store != nil && requisitionForm.Store.ID == 0 {
+		requisitionForm.Store = nil
+	}
+
+	if err := validate.Struct(requisitionForm); err != nil {
+		resp := responses.NewValidationErrorResponse(err, requisitionForm)
 		c.JSON(resp.Status, resp)
 		return
 	}
 
-	err := ph.service.CreateInventory(plantForm.ID, &inventoryForm)
+	err := ph.service.CreateRequisition(plantForm.ID, &requisitionForm)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Inventory created successfully"))
+	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Requisition created successfully"))
 }
 
-// Get a inventory
+// Get a requisition
 func (ph *Handler) Get(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
@@ -90,16 +94,16 @@ func (ph *Handler) Get(c *gin.Context) {
 		return
 	}
 
-	inventoryDto, err := ph.service.GetInventoryByID(plantForm.ID, id)
+	requisitionDto, err := ph.service.GetRequisitionByID(plantForm.ID, id)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Inventory fetched successfully", inventoryDto))
+	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Requisition fetched successfully", requisitionDto))
 }
 
-// Update a inventory
+// Update a requisition
 func (ph *Handler) Update(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
@@ -111,30 +115,34 @@ func (ph *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	var inventoryForm inventory.Form
-	if err := c.BindJSON(&inventoryForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, inventoryForm)
+	var requisitionForm requisition.Form
+	if err := c.BindJSON(&requisitionForm); err != nil {
+		resp := responses.NewValidationErrorResponse(err, requisitionForm)
 		c.JSON(resp.Status, resp)
 		return
+	}
+
+	if requisitionForm.Store != nil && requisitionForm.Store.ID == 0 {
+		requisitionForm.Store = nil
 	}
 
 	validate := validation.GetValidator()
-	if err := validate.Struct(inventoryForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, inventoryForm)
+	if err := validate.Struct(requisitionForm); err != nil {
+		resp := responses.NewValidationErrorResponse(err, requisitionForm)
 		c.JSON(resp.Status, resp)
 		return
 	}
 
-	err = ph.service.UpdateInventory(plantForm.ID, id, &inventoryForm)
+	err = ph.service.UpdateRequisition(plantForm.ID, id, &requisitionForm)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Inventory updated successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Requisition updated successfully"))
 }
 
-// Delete a inventory
+// Delete a requisition
 func (ph *Handler) Delete(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
@@ -148,16 +156,16 @@ func (ph *Handler) Delete(c *gin.Context) {
 	}
 
 	id := uint(idInt)
-	err = ph.service.DeleteInventory(plantForm.ID, id)
+	err = ph.service.DeleteRequisition(plantForm.ID, id)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Inventory deleted successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Requisition deleted successfully"))
 }
 
-// DeleteBulk a inventory
+// DeleteBulk a requisition
 func (ph *Handler) DeleteBulk(c *gin.Context) {
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
@@ -176,40 +184,11 @@ func (ph *Handler) DeleteBulk(c *gin.Context) {
 		return
 	}
 
-	err := ph.service.DeleteInventorys(plantForm.ID, idsForm.IDs)
+	err := ph.service.DeleteRequisitions(plantForm.ID, idsForm.IDs)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Inventorys deleted successfully"))
-}
-
-// Create a new inventory
-func (ph *Handler) RawMaterialStockin(c *gin.Context) {
-	plantValue, _ := c.Get(auth.AuthPlantKey)
-	plantForm, _ := plantValue.(plant.Form)
-
-	var rawMaterialStockInForm inventory.RawMaterialStockInForm
-	if err := c.ShouldBindJSON(&rawMaterialStockInForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, rawMaterialStockInForm)
-		c.JSON(resp.Status, resp)
-		return
-	}
-
-	validate := validation.GetValidator()
-
-	if err := validate.Struct(rawMaterialStockInForm); err != nil {
-		resp := responses.NewValidationErrorResponse(err, rawMaterialStockInForm)
-		c.JSON(resp.Status, resp)
-		return
-	}
-
-	err := ph.service.CreateRawMaterialStockIn(plantForm.ID, &rawMaterialStockInForm)
-	if err != nil {
-		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(resp.Status, resp)
-		return
-	}
-	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Raw material stockin successfully"))
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Requisitions deleted successfully"))
 }
