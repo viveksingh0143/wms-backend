@@ -11,6 +11,8 @@ const (
 	InventoryIn InventoryStatus = iota + 1
 	InventoryOut
 	InventoryRejected
+	InventoryExpired
+	InventoryApprovalWait
 )
 
 func (ps *InventoryStatus) MarshalJSON() ([]byte, error) {
@@ -53,6 +55,10 @@ func (s *InventoryStatus) getStatusFromString(str string) InventoryStatus {
 		return InventoryOut
 	case "rejected":
 		return InventoryRejected
+	case "expired":
+		return InventoryExpired
+	case "waiting-approval":
+		return InventoryApprovalWait
 	default:
 		return 0 // or some default value
 	}
@@ -66,6 +72,10 @@ func (s *InventoryStatus) String() string {
 		return "OUT"
 	case InventoryRejected:
 		return "REJECTED"
+	case InventoryExpired:
+		return "EXPIRED"
+	case InventoryApprovalWait:
+		return "WAITING-APPROVAL"
 	default:
 		return "UNKNOWN"
 	}

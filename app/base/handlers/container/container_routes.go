@@ -8,6 +8,9 @@ func SetupContainerRoutes(r *gin.RouterGroup, containerHandler *Handler) {
 	api := r.Group("/containers")
 	{
 		api.DELETE("/bulk-update", containerHandler.DeleteBulk)
+		api.GET("/getcontents", containerHandler.GetContentsByCode)
+		api.POST("/marked-full", containerHandler.MarkedFull)
+
 		api.GET("", containerHandler.List)
 		api.POST("", containerHandler.Create)
 		api.GET("/:id", containerHandler.Get)

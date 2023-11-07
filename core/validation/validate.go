@@ -220,7 +220,7 @@ var TagMessages = map[string]string{
 	"image":     "Field must be a valid image file.",
 	"isdefault": "Field must have the default value.",
 
-	// Length and Quantity related tags
+	// Length and QuantityLine related tags
 	"len":   "Field must have a length of %v.",
 	"max":   "Field must have a maximum of %v.",
 	"min":   "Field must have a minimum of %v.",

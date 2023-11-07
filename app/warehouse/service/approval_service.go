@@ -82,7 +82,7 @@ type DefaultApprovalService struct {
 //	contentModel := &baseModels.ContainerContent{
 //		ProductID: inventoryForm.Product.ID,
 //		Product:   s.productService.ToModel(inventoryForm.Product),
-//		Quantity:  inventoryForm.Quantity,
+//		QuantityLine:  inventoryForm.QuantityLine,
 //	}
 //	return s.repo.CreateRawMaterialStockIn(plantID, storeModel, containerModel, contentModel)
 //}
@@ -124,7 +124,7 @@ type DefaultApprovalService struct {
 //
 //func (s *DefaultApprovalService) ToModel(plantID uint, inventoryForm *inventory.Form) *models.Approval {
 //	inventoryModel := &models.Approval{
-//		Quantity: inventoryForm.Quantity,
+//		QuantityLine: inventoryForm.QuantityLine,
 //	}
 //	inventoryModel.ID = inventoryForm.ID
 //
@@ -138,7 +138,7 @@ type DefaultApprovalService struct {
 //}
 //
 //func (s *DefaultApprovalService) FormToModel(plantID uint, inventoryForm *inventory.Form, inventoryModel *models.Approval) {
-//	inventoryModel.Quantity = inventoryForm.Quantity
+//	inventoryModel.QuantityLine = inventoryForm.QuantityLine
 //
 //	if inventoryForm.Product != nil {
 //		inventoryModel.Product = s.productService.ToModel(inventoryForm.Product)
@@ -151,7 +151,7 @@ type DefaultApprovalService struct {
 //func (s *DefaultApprovalService) ToForm(plantID uint, inventoryModel *models.Approval) *inventory.Form {
 //	inventoryForm := &inventory.Form{
 //		ID:       inventoryModel.ID,
-//		Quantity: inventoryModel.Quantity,
+//		QuantityLine: inventoryModel.QuantityLine,
 //	}
 //
 //	if inventoryModel.Product != nil {

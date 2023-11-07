@@ -15,6 +15,7 @@ type Storelocation struct {
 	ShelfNumber string            `gorm:"type:varchar(255);"`
 	Description string            `gorm:"type:varchar(255);"`
 	Status      types.FillStatus  `gorm:"type:int;default:1"`
+	Quantity    float64           `json:"quantity"`
 	StoreID     uint              `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Store       *Store            `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	PlantID     uint              `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

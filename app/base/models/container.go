@@ -14,7 +14,7 @@ type Container struct {
 	Address         string              `gorm:"type:varchar(255);column:address"`
 	Status          types.Status        `gorm:"type:int;default:1"`
 	StockLevel      StockLevel          `gorm:"type:enum('EMPTY','PARTIAL','FULL');not null;default:'EMPTY';column:stock_level"`
-	Approved        bool                `gorm:"type:tinyint;not null;default:0;column:approved"`
+	Approved        types.Approval      `gorm:"type:int;default:3"`
 	ProductID       *uint               `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Product         *Product            `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	StorelocationID *uint               `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`

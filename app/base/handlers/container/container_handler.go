@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"star-wms/app/admin/dto/plant"
 	"star-wms/app/base/dto/container"
+	"star-wms/app/base/models"
 	"star-wms/app/base/service"
 	"star-wms/core/auth"
 	"star-wms/core/common/requests"
@@ -197,4 +198,56 @@ func (ph *Handler) DeleteBulk(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Containers deleted successfully"))
+}
+
+func (ph *Handler) MarkedFull(c *gin.Context) {
+	plantValue, _ := c.Get(auth.AuthPlantKey)
+	plantForm, _ := plantValue.(plant.Form)
+
+	containerCode := c.Query("code")
+
+	if containerCode == "" {
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "No container code provided in query", nil)
+		c.JSON(resp.Status, resp)
+		return
+	}
+
+	containerDto, err := ph.service.GetContainerByCode(plantForm.ID, containerCode, false, false, false, false)
+	if err != nil {
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
+		return
+	} else if containerDto.StockLevel == models.Empty {
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "Container is empty, can not marked full", nil)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	err = ph.service.MarkedContainerFull(plantForm.ID, containerDto)
+	if err != nil {
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, responses.NewSuccessResponse(http.StatusOK, "Container marked full successfully"))
+}
+
+func (ph *Handler) GetContentsByCode(c *gin.Context) {
+	plantValue, _ := c.Get(auth.AuthPlantKey)
+	plantForm, _ := plantValue.(plant.Form)
+
+	containerCode := c.Query("code")
+
+	if containerCode == "" {
+		resp := responses.NewErrorResponse(http.StatusBadRequest, "No container code provided in query", nil)
+		c.JSON(resp.Status, resp)
+		return
+	}
+
+	containerDto, err := ph.service.GetContainerByCode(plantForm.ID, containerCode, true, true, false, false)
+	if err != nil {
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Container fetched successfully", containerDto))
 }

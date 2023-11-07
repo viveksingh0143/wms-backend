@@ -3,10 +3,13 @@ package repository
 import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"star-wms/app/base/dto/container"
 	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
+	warehouseModels "star-wms/app/warehouse/models"
 	commonModels "star-wms/core/common/requests"
+	"star-wms/core/types"
 	"star-wms/core/utils"
 )
 
@@ -22,8 +25,11 @@ type ContainerRepository interface {
 	ExistsByID(plantID uint, ID uint) bool
 	ExistsByName(plantID uint, name string, ID uint) bool
 	ExistsByCode(plantID uint, code string, ID uint) bool
+	MarkedContainerFull(plantID uint, id uint) error
 	Approve(plantID uint, id uint) error
 	ApproveMulti(plantID uint, ids []uint) error
+	Reject(plantID uint, id uint) error
+	RejectMulti(plantID uint, ids []uint) error
 }
 
 type ContainerGormRepository struct {
@@ -46,7 +52,7 @@ func (p *ContainerGormRepository) GetAllRequiredApproval(plantID uint, storeForm
 	query.Where("plant_id = ?", plantID)
 	query.Where("store_id in ?", storeIds)
 	query.Where("product_id is not null")
-	query.Where("approved = 0")
+	query.Where("approved = 3")
 	query = utils.BuildQuery(query, filter)
 
 	if err := query.Count(&count).Error; err != nil {
@@ -173,32 +179,6 @@ func (p *ContainerGormRepository) DeleteMulti(plantID uint, ids []uint) error {
 	})
 }
 
-func (p *ContainerGormRepository) Approve(plantID uint, id uint) error {
-	return p.db.Transaction(func(tx *gorm.DB) error {
-		var containerModel models.Container
-		if err := tx.Where("plant_id = ?", plantID).First(&containerModel, id).Error; err != nil {
-			log.Debug().Err(err).Msg("Failed to get container by ID")
-			return err
-		}
-
-		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("approved", 1).Error; err != nil {
-			log.Error().Err(err).Msg("Failed to update the container field")
-			return err
-		}
-		return nil
-	})
-}
-
-func (p *ContainerGormRepository) ApproveMulti(plantID uint, ids []uint) error {
-	return p.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id IN ?", ids).Update("approved", 1).Error; err != nil {
-			log.Error().Err(err).Msg("Failed to update the container field")
-			return err
-		}
-		return nil
-	})
-}
-
 func (p *ContainerGormRepository) ExistsByID(plantID uint, ID uint) bool {
 	var count int64
 	query := p.db.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id = ?", ID)
@@ -233,4 +213,182 @@ func (p *ContainerGormRepository) ExistsByCode(plantID uint, code string, ID uin
 		return false
 	}
 	return count > 0
+}
+
+func (p *ContainerGormRepository) MarkedContainerFull(plantID uint, id uint) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("stock_level", "FULL").Error; err != nil {
+			log.Error().Err(err).Msg("Failed to marked container full")
+			return err
+		}
+		return nil
+	})
+}
+
+func (p *ContainerGormRepository) Approve(plantID uint, id uint) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		var containerModel models.Container
+		if err := tx.Where("plant_id = ?", plantID).First(&containerModel, id).Error; err != nil {
+			log.Debug().Err(err).Msg("Failed to get container by ID")
+			return err
+		}
+
+		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("approved", 1).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to update the container field")
+			return err
+		}
+		var containerContents []*models.ContainerContent
+		query := p.db.Model(&models.ContainerContent{})
+		query.Where("plant_id = ?", plantID)
+		query.Where("container_id = ?", id)
+
+		if err := query.Find(&containerContents).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to get all container contentss")
+			return err
+		}
+		if containerContents != nil && len(containerContents) > 0 {
+			for _, containerContent := range containerContents {
+				if containerContent.RMBatchID != nil && *containerContent.RMBatchID > 0 {
+					var rmBatchModel *warehouseModels.RMBatch
+					if err := p.db.Where("plant_id = ?", plantID).First(&rmBatchModel, *containerContent.RMBatchID).Error; err != nil {
+						log.Debug().Err(err).Msg("Failed to get raw material batch by ID")
+						return err
+					}
+					rmBatchModel.Status = types.InventoryIn
+					if err := tx.Omit(clause.Associations).Save(&rmBatchModel).Error; err != nil {
+						return err
+					}
+					transactionHistory := rmBatchModel.NewTransactionHistory()
+
+					if err := tx.Omit(clause.Associations).Create(&transactionHistory).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func (p *ContainerGormRepository) ApproveMulti(plantID uint, ids []uint) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id IN ?", ids).Update("approved", 1).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to update the container field")
+			return err
+		}
+		var containerContents []*models.ContainerContent
+		query := p.db.Model(&models.ContainerContent{})
+		query.Where("plant_id = ?", plantID)
+		query.Where("container_id in ?", ids)
+
+		if err := query.Find(&containerContents).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to get all container contentss")
+			return err
+		}
+		if containerContents != nil && len(containerContents) > 0 {
+			for _, containerContent := range containerContents {
+				if containerContent.RMBatchID != nil && *containerContent.RMBatchID > 0 {
+					var rmBatchModel *warehouseModels.RMBatch
+					if err := p.db.Where("plant_id = ?", plantID).First(&rmBatchModel, *containerContent.RMBatchID).Error; err != nil {
+						log.Debug().Err(err).Msg("Failed to get raw material batch by ID")
+						return err
+					}
+					rmBatchModel.Status = types.InventoryIn
+					if err := tx.Omit(clause.Associations).Save(&rmBatchModel).Error; err != nil {
+						return err
+					}
+					transactionHistory := rmBatchModel.NewTransactionHistory()
+
+					if err := tx.Omit(clause.Associations).Create(&transactionHistory).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func (p *ContainerGormRepository) Reject(plantID uint, id uint) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		var containerModel models.Container
+		if err := tx.Where("plant_id = ?", plantID).First(&containerModel, id).Error; err != nil {
+			log.Debug().Err(err).Msg("Failed to get container by ID")
+			return err
+		}
+
+		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("approved", 1).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to update the container field")
+			return err
+		}
+		var containerContents []*models.ContainerContent
+		query := p.db.Model(&models.ContainerContent{})
+		query.Where("plant_id = ?", plantID)
+		query.Where("container_id = ?", id)
+
+		if err := query.Find(&containerContents).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to get all container contentss")
+			return err
+		}
+		if containerContents != nil && len(containerContents) > 0 {
+			for _, containerContent := range containerContents {
+				if containerContent.RMBatchID != nil && *containerContent.RMBatchID > 0 {
+					var rmBatchModel *warehouseModels.RMBatch
+					if err := p.db.Where("plant_id = ?", plantID).First(&rmBatchModel, *containerContent.RMBatchID).Error; err != nil {
+						log.Debug().Err(err).Msg("Failed to get raw material batch by ID")
+						return err
+					}
+					rmBatchModel.Status = types.InventoryIn
+					if err := tx.Omit(clause.Associations).Save(&rmBatchModel).Error; err != nil {
+						return err
+					}
+					transactionHistory := rmBatchModel.NewTransactionHistory()
+
+					if err := tx.Omit(clause.Associations).Create(&transactionHistory).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func (p *ContainerGormRepository) RejectMulti(plantID uint, ids []uint) error {
+	return p.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Container{}).Where("plant_id = ?", plantID).Where("id IN ?", ids).Update("approved", 1).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to update the container field")
+			return err
+		}
+		var containerContents []*models.ContainerContent
+		query := p.db.Model(&models.ContainerContent{})
+		query.Where("plant_id = ?", plantID)
+		query.Where("container_id in ?", ids)
+
+		if err := query.Find(&containerContents).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to get all container contentss")
+			return err
+		}
+		if containerContents != nil && len(containerContents) > 0 {
+			for _, containerContent := range containerContents {
+				if containerContent.RMBatchID != nil && *containerContent.RMBatchID > 0 {
+					var rmBatchModel *warehouseModels.RMBatch
+					if err := p.db.Where("plant_id = ?", plantID).First(&rmBatchModel, *containerContent.RMBatchID).Error; err != nil {
+						log.Debug().Err(err).Msg("Failed to get raw material batch by ID")
+						return err
+					}
+					rmBatchModel.Status = types.InventoryIn
+					if err := tx.Omit(clause.Associations).Save(&rmBatchModel).Error; err != nil {
+						return err
+					}
+					transactionHistory := rmBatchModel.NewTransactionHistory()
+
+					if err := tx.Omit(clause.Associations).Create(&transactionHistory).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	})
 }

@@ -17,9 +17,11 @@ type Form struct {
 	Address       string              `json:"address" validate:"omitempty,min=4,max=400"`
 	Status        types.Status        `json:"status" validate:"required,gt=0"`
 	StockLevel    models.StockLevel   `json:"stock_level" binding:"-"`
-	Approved      bool                `json:"approved" binding:"-"`
+	Approved      types.Approval      `json:"approved" binding:"-"`
+	ProductID     *uint               `json:"product_id" binding:"-"`
 	Product       *product.Form       `json:"product" binding:"-"`
 	Storelocation *storelocation.Form `json:"storelocation" binding:"-"`
+	StoreID       *uint               `json:"store_id" binding:"-"`
 	Store         *store.Form         `json:"store" binding:"-"`
 	Contents      []*ContentForm      `json:"contents" binding:"-"`
 }

@@ -12,11 +12,13 @@ type StorelocationService interface {
 	GetAllStorelocations(plantID uint, storeID uint, filter storelocation.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*storelocation.Form, int64, error)
 	CreateStorelocation(plantID uint, storeID uint, storelocationForm *storelocation.Form) error
 	GetStorelocationByID(plantID uint, storeID uint, id uint) (*storelocation.Form, error)
+	GetStorelocationByCode(plantID uint, code string) (*storelocation.Form, error)
 	UpdateStorelocation(plantID uint, storeID uint, id uint, storelocationForm *storelocation.Form) error
 	DeleteStorelocation(plantID uint, storeID uint, id uint) error
 	DeleteStorelocations(plantID uint, storeID uint, ids []uint) error
 	ExistsById(plantID uint, storeID uint, ID uint) bool
 	ExistsByCode(plantID uint, storeID uint, code string, ID uint) bool
+	ExistsByOnlyCode(plantID uint, code string) bool
 	ToModel(plantID uint, storeID uint, storelocationForm *storelocation.Form) *models.Storelocation
 	FormToModel(plantID uint, storeID uint, storelocationForm *storelocation.Form, storelocationModel *models.Storelocation)
 	ToForm(plantID uint, storeID uint, storelocationModel *models.Storelocation) *storelocation.Form
@@ -57,6 +59,14 @@ func (s *DefaultStorelocationService) GetStorelocationByID(plantID uint, storeID
 	return s.ToForm(plantID, storeID, data), nil
 }
 
+func (s *DefaultStorelocationService) GetStorelocationByCode(plantID uint, code string) (*storelocation.Form, error) {
+	data, err := s.repo.GetByCode(plantID, code)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(plantID, data.StoreID, data), nil
+}
+
 func (s *DefaultStorelocationService) UpdateStorelocation(plantID uint, storeID uint, id uint, storelocationForm *storelocation.Form) error {
 	if s.ExistsByCode(plantID, storeID, storelocationForm.Code, id) {
 		return responses.NewInputError("code", "already exists", storelocationForm.Code)
@@ -83,6 +93,10 @@ func (s *DefaultStorelocationService) ExistsById(plantID uint, storeID uint, ID 
 
 func (s *DefaultStorelocationService) ExistsByCode(plantID uint, storeID uint, code string, ID uint) bool {
 	return s.repo.ExistsByCode(plantID, storeID, code, ID)
+}
+
+func (s *DefaultStorelocationService) ExistsByOnlyCode(plantID uint, code string) bool {
+	return s.repo.ExistsByOnlyCode(plantID, code)
 }
 
 func (s *DefaultStorelocationService) ToModel(plantID uint, storeID uint, storelocationForm *storelocation.Form) *models.Storelocation {

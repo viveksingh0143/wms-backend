@@ -67,7 +67,7 @@ func (p *BatchlabelGormRepository) Create(plantID uint, batchlabelModel *models.
 		batchlabelModel.Customer = customer
 
 		var joborder *baseModels.Joborder
-		if batchlabelModel.Joborder.ID > 0 {
+		if batchlabelModel.Joborder != nil && batchlabelModel.Joborder.ID > 0 {
 			if err := tx.First(&joborder, batchlabelModel.Joborder.ID).Error; err != nil {
 				log.Debug().Err(err).Msg("Failed to get job order by ID")
 				return err

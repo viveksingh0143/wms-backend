@@ -13,11 +13,13 @@ type StorelocationRepository interface {
 	GetAll(plantID uint, storeID uint, filter storelocation.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Storelocation, int64, error)
 	Create(plantID uint, storeID uint, storelocation *models.Storelocation) error
 	GetByID(plantID uint, storeID uint, id uint) (*models.Storelocation, error)
+	GetByCode(plantID uint, code string) (*models.Storelocation, error)
 	Update(plantID uint, storeID uint, storelocation *models.Storelocation) error
 	Delete(plantID uint, storeID uint, id uint) error
 	DeleteMulti(plantID uint, storeID uint, ids []uint) error
 	ExistsByID(plantID uint, storeID uint, ID uint) bool
 	ExistsByCode(plantID uint, storeID uint, code string, ID uint) bool
+	ExistsByOnlyCode(plantID uint, code string) bool
 }
 
 type StorelocationGormRepository struct {
@@ -71,6 +73,15 @@ func (p *StorelocationGormRepository) GetByID(plantID uint, storeID uint, id uin
 	var storelocationModel *models.Storelocation
 	if err := p.db.Preload("Store").Where("plant_id = ?", plantID).Where("store_id = ?", storeID).First(&storelocationModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get storelocation by ID")
+		return nil, err
+	}
+	return storelocationModel, nil
+}
+
+func (p *StorelocationGormRepository) GetByCode(plantID uint, code string) (*models.Storelocation, error) {
+	var storelocationModel *models.Storelocation
+	if err := p.db.Preload("Store").Where("plant_id = ?", plantID).Where("code = ?", code).First(&storelocationModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get storelocation by Code")
 		return nil, err
 	}
 	return storelocationModel, nil
@@ -132,6 +143,16 @@ func (p *StorelocationGormRepository) ExistsByCode(plantID uint, storeID uint, c
 	if ID > 0 {
 		query = query.Where("ID <> ?", ID)
 	}
+	if err := query.Count(&count).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to count by code")
+		return false
+	}
+	return count > 0
+}
+
+func (p *StorelocationGormRepository) ExistsByOnlyCode(plantID uint, code string) bool {
+	var count int64
+	query := p.db.Model(&models.Storelocation{}).Where("plant_id = ?", plantID).Where("code = ?", code)
 	if err := query.Count(&count).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to count by code")
 		return false

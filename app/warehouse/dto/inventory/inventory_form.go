@@ -19,6 +19,23 @@ type RawMaterialStockInForm struct {
 	BatchNo    string         `json:"batch_no" validate:"required,min=1,max=100"`
 }
 
+type FinishedGoodsStockInForm struct {
+	Store         *store.Form `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`
+	ContainerCode string      `json:"container_code" validate:"required,min=1,max=100"`
+	Barcodes      []string    `json:"barcodes" validate:"required"`
+}
+
+type FinishedGoodStockInForm struct {
+	Store         *store.Form `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`
+	ContainerCode string      `json:"container_code" validate:"required,min=1,max=100"`
+	Barcode       string      `json:"barcode" validate:"required"`
+}
+
+type AttachContainerForm struct {
+	ContainerCode string `json:"container_code" validate:"required"`
+	LocationCode  string `json:"location_code" validate:"required"`
+}
+
 type Form struct {
 	ID       uint          `json:"id" binding:"-"`
 	Store    *store.Form   `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`

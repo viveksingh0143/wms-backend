@@ -10,4 +10,5 @@ type ContentForm struct {
 	Product   *product.Form `json:"product" binding:"-"`
 	Quantity  float64       `json:"quantity"`
 	Container *Form         `json:"container"`
+	Barcode   string        `json:"barcode"`
 }

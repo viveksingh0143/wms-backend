@@ -30,6 +30,7 @@ import (
 	"star-wms/app/warehouse/handlers/batchlabel"
 	"star-wms/app/warehouse/handlers/inventory"
 	"star-wms/app/warehouse/handlers/requisitionapproval"
+	"star-wms/app/warehouse/handlers/rmbatch"
 	"star-wms/app/warehouse/handlers/sticker"
 	"star-wms/app/warehouse/handlers/stockapproval"
 	warehouseRepository "star-wms/app/warehouse/repository"
@@ -92,6 +93,9 @@ type AppContainer struct {
 	InventoryRepo              warehouseRepository.InventoryRepository
 	InventoryService           warehouseService.InventoryService
 	InventoryHandler           *inventory.Handler
+	RMBatchRepo                warehouseRepository.RMBatchRepository
+	RMBatchService             warehouseService.RMBatchService
+	RMBatchHandler             *rmbatch.Handler
 	StockapprovalHandler       *stockapproval.Handler
 	RequisitionApprovalHandler *requisitionapproval.Handler
 	AuthService                authServices.AuthService
@@ -163,12 +167,13 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	stickerHandler := sticker.NewStickerHandler(batchlabelService)
 
 	inventoryRepo := warehouseRepository.NewInventoryGormRepository(db)
-	inventoryService := warehouseService.NewInventoryService(inventoryRepo, productService, storeService, containerService)
+	inventoryService := warehouseService.NewInventoryService(inventoryRepo, productService, storeService, storelocationService, containerService, batchlabelService)
 	inventoryHandler := inventory.NewInventoryHandler(inventoryService)
 
-	//inventoryRepo := warehouseRepository.NewInventoryGormRepository(db)
-	//stockapprovalService = warehouseService.StockapprovalService()
-	//storeService := warehouseService.New
+	rmbatchRepo := warehouseRepository.NewRMBatchGormRepository(db)
+	rmbatchService := warehouseService.NewRMBatchService(rmbatchRepo, productService, storeService, containerService)
+	rmbatchHandler := rmbatch.NewRMBatchHandler(rmbatchService)
+
 	stockapprovalHandler := stockapproval.NewStockapprovalHandler(storeService, containerService)
 	requisitionApprovalHandler := requisitionapproval.NewRequisitionApprovalHandler(storeService, requisitionService)
 
@@ -227,6 +232,9 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		InventoryRepo:              inventoryRepo,
 		InventoryService:           inventoryService,
 		InventoryHandler:           inventoryHandler,
+		RMBatchRepo:                rmbatchRepo,
+		RMBatchService:             rmbatchService,
+		RMBatchHandler:             rmbatchHandler,
 		StockapprovalHandler:       stockapprovalHandler,
 		RequisitionApprovalHandler: requisitionApprovalHandler,
 		AuthService:                authService,

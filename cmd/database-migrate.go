@@ -53,6 +53,8 @@ var databaseMigrateCmd = &cobra.Command{
 			&warehouseModels.StickerItem{},
 			&warehouseModels.Inventory{},
 			&warehouseModels.StockMovements{},
+			&warehouseModels.RMBatch{},
+			&warehouseModels.RMBatchTransaction{},
 		)
 		log.Info().Msg("Database auto migration for permissions")
 

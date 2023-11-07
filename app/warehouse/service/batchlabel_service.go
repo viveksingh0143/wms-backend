@@ -33,10 +33,14 @@ type BatchlabelService interface {
 	GetAllStickers(plantID uint, batchlabelID uint, filter batchlabel.StickerFilter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*batchlabel.StickerForm, int64, error)
 	CreateSticker(plantID uint, batchlabelID uint, multiStickerForm *batchlabel.MultiStickerForm) error
 	GetStickerByID(plantID uint, batchlabelID uint, id uint) (*batchlabel.StickerForm, error)
+	GetStickerByBarcodePlantwise(plantID uint, barcode string) (*batchlabel.StickerForm, error)
 	ExistsStickerById(plantID uint, batchlabelID uint, ID uint) bool
 	ExistsStickerByBarcode(plantID uint, batchlabelID uint, barcode string, ID uint) bool
+	ExistsStickerByBarcodePlantwise(plantID uint, barcode string) bool
 	ToStickerForm(plantID uint, batchlabelID uint, stickerModel *models.Sticker) *batchlabel.StickerForm
 	ToStickerFormSlice(plantID uint, batchlabelID uint, stickerModels []*models.Sticker) []*batchlabel.StickerForm
+	ToStickerModel(plantID uint, stickerForm *batchlabel.StickerForm) *models.Sticker
+	ToStickerModelFormSlice(plantID uint, stickersForm []*batchlabel.StickerForm) []*models.Sticker
 }
 
 type DefaultBatchlabelService struct {
@@ -380,6 +384,14 @@ func (s *DefaultBatchlabelService) GetStickerByID(plantID uint, batchlabelID uin
 	return s.ToStickerForm(plantID, batchlabelID, data), nil
 }
 
+func (s *DefaultBatchlabelService) GetStickerByBarcodePlantwise(plantID uint, barcode string) (*batchlabel.StickerForm, error) {
+	data, err := s.stickerRepository.GetByBarcodePlantwise(plantID, barcode)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToStickerForm(plantID, data.BatchlabelID, data), nil
+}
+
 func (s *DefaultBatchlabelService) ExistsStickerById(plantID uint, batchlabelID uint, ID uint) bool {
 	return s.stickerRepository.ExistsByID(plantID, batchlabelID, ID)
 }
@@ -388,21 +400,27 @@ func (s *DefaultBatchlabelService) ExistsStickerByBarcode(plantID uint, batchlab
 	return s.stickerRepository.ExistsByBarcode(plantID, batchlabelID, barcode, ID)
 }
 
+func (s *DefaultBatchlabelService) ExistsStickerByBarcodePlantwise(plantID uint, barcode string) bool {
+	return s.stickerRepository.ExistsByBarcodePlantwise(plantID, barcode)
+}
+
 func (s *DefaultBatchlabelService) ToStickerForm(plantID uint, batchlabelID uint, stickerModel *models.Sticker) *batchlabel.StickerForm {
 	stickerForm := &batchlabel.StickerForm{
-		ID:          stickerModel.ID,
-		Barcode:     stickerModel.Barcode,
-		PacketNo:    stickerModel.PacketNo,
-		PrintCount:  stickerModel.PrintCount,
-		Shift:       stickerModel.Shift,
-		ProductLine: stickerModel.ProductLine,
-		BatchNo:     stickerModel.BatchNo,
-		MachineNo:   stickerModel.MachineNo,
-		IsUsed:      stickerModel.IsUsed,
-		UnitWeight:  stickerModel.UnitWeightLine,
-		Quantity:    stickerModel.QuantityLine,
-		Supervisor:  stickerModel.Supervisor,
+		ID:           stickerModel.ID,
+		Barcode:      stickerModel.Barcode,
+		PacketNo:     stickerModel.PacketNo,
+		PrintCount:   stickerModel.PrintCount,
+		Shift:        stickerModel.Shift,
+		ProductLine:  stickerModel.ProductLine,
+		BatchNo:      stickerModel.BatchNo,
+		MachineNo:    stickerModel.MachineNo,
+		IsUsed:       stickerModel.IsUsed,
+		UnitWeight:   stickerModel.UnitWeightLine,
+		QuantityLine: stickerModel.QuantityLine,
+		Quantity:     stickerModel.Quantity,
+		Supervisor:   stickerModel.Supervisor,
 	}
+	stickerForm.ProductID = stickerModel.ProductID
 	if stickerModel.Product != nil {
 		stickerForm.Product = s.productService.ToForm(stickerModel.Product)
 	}
@@ -443,6 +461,40 @@ func (s *DefaultBatchlabelService) ToStickerItemFormSlice(plantID uint, batchlab
 	data := make([]*batchlabel.StickerItem, 0)
 	for _, stickerItemModel := range stickerItemModels {
 		data = append(data, s.ToStickerItemForm(plantID, batchlabelID, stickerItemModel))
+	}
+	return data
+}
+
+func (s *DefaultBatchlabelService) ToStickerModel(plantID uint, stickerForm *batchlabel.StickerForm) *models.Sticker {
+	stickerModel := &models.Sticker{
+		Barcode:      stickerForm.Barcode,
+		PacketNo:     stickerForm.PacketNo,
+		PrintCount:   stickerForm.PrintCount,
+		Shift:        stickerForm.Shift,
+		ProductLine:  stickerForm.ProductLine,
+		BatchNo:      stickerForm.BatchNo,
+		MachineNo:    stickerForm.MachineNo,
+		IsUsed:       stickerForm.IsUsed,
+		Supervisor:   stickerForm.Supervisor,
+		Quantity:     stickerForm.Quantity,
+		QuantityLine: stickerForm.QuantityLine,
+	}
+	stickerModel.ID = stickerForm.ID
+
+	stickerModel.ProductID = stickerForm.ProductID
+	if stickerForm.Product != nil {
+		stickerModel.Product = s.productService.ToModel(stickerForm.Product)
+	}
+	if stickerForm.Batchlabel != nil {
+		stickerModel.Batchlabel = s.ToBatchlabelModel(plantID, stickerForm.Batchlabel)
+	}
+	return stickerModel
+}
+
+func (s *DefaultBatchlabelService) ToStickerModelFormSlice(plantID uint, stickersForm []*batchlabel.StickerForm) []*models.Sticker {
+	data := make([]*models.Sticker, 0)
+	for _, stickerForm := range stickersForm {
+		data = append(data, s.ToStickerModel(plantID, stickerForm))
 	}
 	return data
 }

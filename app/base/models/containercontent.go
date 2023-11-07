@@ -7,6 +7,8 @@ import (
 
 type ContainerContent struct {
 	models.MyModel
+	Barcode     string            `gorm:"index;"`
+	RMBatchID   *uint             `gorm:"index;"`
 	ContainerID uint              `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Container   *Container        `gorm:"foreignKey:ContainerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	ProductID   uint              `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

@@ -8,6 +8,7 @@ import (
 	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	commonModels "star-wms/core/common/requests"
+	"star-wms/core/types"
 	"star-wms/core/utils"
 )
 
@@ -45,7 +46,7 @@ func (p *RequisitionGormRepository) GetAllRequiredApproval(plantID uint, storeFo
 	query := p.db.Model(&models.Requisition{})
 	query.Where("plant_id = ?", plantID)
 	query.Where("store_id in ?", storeIds)
-	query.Where("approved = 0")
+	query.Where("approved = 3")
 	query = utils.BuildQuery(query, filter)
 
 	if err := query.Count(&count).Error; err != nil {
@@ -167,7 +168,7 @@ func (p *RequisitionGormRepository) Approve(plantID uint, id uint) error {
 			return err
 		}
 
-		if err := tx.Model(&models.Requisition{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("approved", 1).Error; err != nil {
+		if err := tx.Model(&models.Requisition{}).Where("plant_id = ?", plantID).Where("id = ?", id).Update("approved", types.ApprovalYes).Error; err != nil {
 			log.Error().Err(err).Msg("Failed to update the requisition field")
 			return err
 		}
@@ -177,7 +178,7 @@ func (p *RequisitionGormRepository) Approve(plantID uint, id uint) error {
 
 func (p *RequisitionGormRepository) ApproveMulti(plantID uint, ids []uint) error {
 	return p.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.Requisition{}).Where("plant_id = ?", plantID).Where("id IN ?", ids).Update("approved", 1).Error; err != nil {
+		if err := tx.Model(&models.Requisition{}).Where("plant_id = ?", plantID).Where("id IN ?", ids).Update("approved", types.ApprovalYes).Error; err != nil {
 			log.Error().Err(err).Msg("Failed to update the requisition field")
 			return err
 		}

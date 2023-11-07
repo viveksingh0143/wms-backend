@@ -7,6 +7,7 @@ import (
 	"star-wms/app/base/repository"
 	commonModels "star-wms/core/common/requests"
 	"star-wms/core/common/responses"
+	"star-wms/core/types"
 )
 
 type RequisitionService interface {
@@ -68,6 +69,7 @@ func (s *DefaultRequisitionService) CreateRequisition(plantID uint, requisitionF
 			return responses.NewInputError("store.id", "store not exists", requisitionForm.Store.ID)
 		}
 	}
+	requisitionForm.Approved = types.ApprovalWait
 	requisitionModel := s.ToModel(plantID, requisitionForm)
 	return s.repo.Create(plantID, requisitionModel)
 }

@@ -16,6 +16,7 @@ type ContainerService interface {
 	GetContainerByID(plantID uint, id uint) (*container.Form, error)
 	GetContainerByCode(plantID uint, code string, needContents bool, needProduct bool, needStore bool, needLocation bool) (*container.Form, error)
 	UpdateContainer(plantID uint, id uint, containerForm *container.Form) error
+	MarkedContainerFull(plantID uint, containerForm *container.Form) error
 	DeleteContainer(plantID uint, id uint) error
 	DeleteContainers(plantID uint, ids []uint) error
 	ExistsById(plantID uint, ID uint) bool
@@ -109,6 +110,10 @@ func (s *DefaultContainerService) DeleteContainers(plantID uint, ids []uint) err
 	return s.repo.DeleteMulti(plantID, ids)
 }
 
+func (s *DefaultContainerService) MarkedContainerFull(plantID uint, containerForm *container.Form) error {
+	return s.repo.MarkedContainerFull(plantID, containerForm.ID)
+}
+
 func (s *DefaultContainerService) ApproveContainer(plantID uint, id uint) error {
 	return s.repo.Approve(plantID, id)
 }
@@ -138,9 +143,7 @@ func (s *DefaultContainerService) ToModel(plantID uint, containerForm *container
 		Status:        containerForm.Status,
 	}
 	containerModel.ID = containerForm.ID
-	if containerForm.Approved {
-		containerModel.Approved = containerForm.Approved
-	}
+	containerModel.Approved = containerForm.Approved
 	if containerForm.StockLevel != "" {
 		containerModel.StockLevel = containerForm.StockLevel
 	}
@@ -163,9 +166,7 @@ func (s *DefaultContainerService) FormToModel(plantID uint, containerForm *conta
 	containerModel.Code = containerForm.Code
 	containerModel.Address = containerForm.Address
 	containerModel.Status = containerForm.Status
-	if containerForm.Approved {
-		containerModel.Approved = containerForm.Approved
-	}
+	containerModel.Approved = containerForm.Approved
 	if containerForm.StockLevel != "" {
 		containerModel.StockLevel = containerForm.StockLevel
 	}
@@ -210,10 +211,12 @@ func (s *DefaultContainerService) ToForm(plantID uint, containerModel *models.Co
 		Status:        containerModel.Status,
 		StockLevel:    containerModel.StockLevel,
 		Approved:      containerModel.Approved,
+		StoreID:       containerModel.StoreID,
 	}
 	containerForm.PlantID = containerModel.PlantID
+	containerForm.ProductID = containerModel.ProductID
 	if containerModel.Storelocation != nil {
-		containerForm.Storelocation = s.storelocationService.ToForm(plantID, containerForm.Storelocation.StoreID, containerModel.Storelocation)
+		containerForm.Storelocation = s.storelocationService.ToForm(plantID, containerModel.Storelocation.StoreID, containerModel.Storelocation)
 	}
 	if containerModel.Store != nil {
 		containerForm.Store = s.storeService.ToForm(plantID, containerModel.Store)

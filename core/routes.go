@@ -19,6 +19,7 @@ import (
 	"star-wms/app/warehouse/handlers/batchlabel"
 	"star-wms/app/warehouse/handlers/inventory"
 	"star-wms/app/warehouse/handlers/requisitionapproval"
+	"star-wms/app/warehouse/handlers/rmbatch"
 	"star-wms/app/warehouse/handlers/stockapproval"
 	"star-wms/core/middlewares"
 )
@@ -70,6 +71,7 @@ func SetupRoutes(r *gin.Engine, receiver *AppContainer) {
 		{
 			batchlabel.SetupBatchlabelRoutes(warehousePlantBasedRoutes, receiver.BatchlabelHandler, receiver.StickerHandler)
 			inventory.SetupInventoryRoutes(warehousePlantBasedRoutes, receiver.InventoryHandler)
+			rmbatch.SetupRMBatchRoutes(warehousePlantBasedRoutes, receiver.RMBatchHandler)
 			stockapproval.SetupStockapprovalsRoutes(warehousePlantBasedRoutes, receiver.StockapprovalHandler)
 			requisitionapproval.SetupRequisitionApprovalsRoutes(warehousePlantBasedRoutes, receiver.RequisitionApprovalHandler)
 		}

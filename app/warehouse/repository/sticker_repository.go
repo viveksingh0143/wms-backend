@@ -19,8 +19,10 @@ type StickerRepository interface {
 	Create(plantID uint, batchlabelID uint, sticker *models.Sticker) error
 	CreateAll(plantID uint, batchlabelID uint, stickers []*models.Sticker) error
 	GetByID(plantID uint, batchlabelID uint, id uint) (*models.Sticker, error)
+	GetByBarcodePlantwise(plantID uint, barcode string) (*models.Sticker, error)
 	ExistsByID(plantID uint, batchlabelID uint, ID uint) bool
 	ExistsByBarcode(plantID uint, batchlabelID uint, barcode string, ID uint) bool
+	ExistsByBarcodePlantwise(plantID uint, barcode string) bool
 }
 
 type StickerGormRepository struct {
@@ -140,6 +142,19 @@ func (p *StickerGormRepository) GetByID(plantID uint, batchlabelID uint, id uint
 	return stickerModel, nil
 }
 
+func (p *StickerGormRepository) GetByBarcodePlantwise(plantID uint, barcode string) (*models.Sticker, error) {
+	var stickerModel *models.Sticker
+	if err := p.db.Where("plant_id = ?", plantID).
+		Preload("Product").
+		Preload("Batchlabel").
+		Where("barcode = ?", barcode).
+		First(&stickerModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get sticker by Code")
+		return nil, err
+	}
+	return stickerModel, nil
+}
+
 func (p *StickerGormRepository) ExistsByID(plantID uint, batchlabelID uint, ID uint) bool {
 	var count int64
 	query := p.db.Model(&models.Sticker{}).Where("plant_id = ?", plantID).Where("batchlabel_id = ?", batchlabelID).Where("id = ?", ID)
@@ -156,6 +171,16 @@ func (p *StickerGormRepository) ExistsByBarcode(plantID uint, batchlabelID uint,
 	if ID > 0 {
 		query = query.Where("ID <> ?", ID)
 	}
+	if err := query.Count(&count).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to count by order number")
+		return false
+	}
+	return count > 0
+}
+
+func (p *StickerGormRepository) ExistsByBarcodePlantwise(plantID uint, barcode string) bool {
+	var count int64
+	query := p.db.Model(&models.Sticker{}).Where("plant_id = ?", plantID).Where("barcode = ?", barcode)
 	if err := query.Count(&count).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to count by order number")
 		return false

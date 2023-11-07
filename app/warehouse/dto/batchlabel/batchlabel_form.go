@@ -33,21 +33,23 @@ type Form struct {
 }
 
 type StickerForm struct {
-	ID          uint           `json:"id" binding:"-"`
-	Barcode     string         `json:"barcode" validate:"required,min=4,max=100"`
-	PacketNo    string         `json:"packet_no" validate:"required,min=1,max=100"`
-	PrintCount  int32          `json:"print_count" binding:"-"`
-	Shift       string         `json:"shift" validate:"required,min=1,max=100"`
-	ProductLine string         `json:"product_line" validate:"required,min=1,max=100"`
-	BatchNo     string         `json:"batch_no" validate:"required,min=1,max=100"`
-	MachineNo   string         `json:"machine_no" validate:"required,min=1,max=100"`
-	Quantity    string         `json:"quantity" validate:"required,min=1,max=100"`
-	UnitWeight  string         `json:"unit_weight" validate:"required,min=1,max=100"`
-	Supervisor  string         `json:"supervisor" validate:"required,min=1,max=100"`
-	IsUsed      bool           `json:"is_used"`
-	Batchlabel  *Form          `json:"Batchlabel" binding:"-"`
-	Product     *product.Form  `json:"product" binding:"-"`
-	Items       []*StickerItem `json:"items"`
+	ID           uint           `json:"id" binding:"-"`
+	Barcode      string         `json:"barcode" validate:"required,min=4,max=100"`
+	PacketNo     string         `json:"packet_no" validate:"required,min=1,max=100"`
+	PrintCount   int32          `json:"print_count" binding:"-"`
+	Shift        string         `json:"shift" validate:"required,min=1,max=100"`
+	ProductLine  string         `json:"product_line" validate:"required,min=1,max=100"`
+	BatchNo      string         `json:"batch_no" validate:"required,min=1,max=100"`
+	MachineNo    string         `json:"machine_no" validate:"required,min=1,max=100"`
+	QuantityLine string         `json:"quantity_line" validate:"required,min=1,max=100"`
+	Quantity     float64        `json:"quantity" validate:"required,min=1,max=100"`
+	UnitWeight   string         `json:"unit_weight" validate:"required,min=1,max=100"`
+	Supervisor   string         `json:"supervisor" validate:"required,min=1,max=100"`
+	IsUsed       bool           `json:"is_used"`
+	Batchlabel   *Form          `json:"Batchlabel" binding:"-"`
+	ProductID    uint           `json:"product_id" binding:"-"`
+	Product      *product.Form  `json:"product" binding:"-"`
+	Items        []*StickerItem `json:"items"`
 }
 
 type MultiStickerForm struct {
