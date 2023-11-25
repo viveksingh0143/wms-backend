@@ -14,9 +14,9 @@ type Batchlabel struct {
 	BatchNo         string                   `gorm:"type:varchar(255);uniqueIndex;not null;column:batch_no"`
 	SoNumber        string                   `gorm:"type:varchar(255)"`
 	POCategory      baseModels.POCategory    `gorm:"type:enum('PRODUCTION','TRAILS','NPD','SAMPLES');not null;default:'PRODUCTION';column:po_category"`
-	UnitType        baseModels.UnitType      `gorm:"type:enum('WEIGHT','PIECE','LIQUID');not null;default:'WEIGHT';column:unit_type"`
+	UnitType        baseModels.UnitType      `gorm:"type:enum('WEIGHT','PIECE','LIQUID','LENGTH');not null;default:'WEIGHT';column:unit_type"`
 	UnitWeight      float64                  `gorm:"column:unit_weight"`
-	UnitValue       baseModels.UnitValue     `gorm:"type:enum('Kilogram','Gram','Liter','Milliliter','Piece');column:unit_weight_type;default:'Gram'"`
+	UnitValue       baseModels.UnitValue     `gorm:"type:enum('PC','GM','KG','MT','LT','YD','SM');column:unit_weight_type;default:'GM'"`
 	TargetQuantity  float64                  `gorm:"not null"`
 	PackageQuantity float64                  `gorm:"not null"`
 	Status          types.Status             `gorm:"type:int;default:1"`

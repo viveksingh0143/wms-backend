@@ -13,6 +13,7 @@ type CategoryRepository interface {
 	GetAll(filter category.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting, withParent bool, withChildren bool) ([]*models.Category, int64, error)
 	Create(category *models.Category) error
 	GetByID(id uint, withParent bool, withChildren bool) (*models.Category, error)
+	GetBySlug(slug string, withParent bool, withChildren bool) (*models.Category, error)
 	Update(category *models.Category) error
 	Delete(id uint) error
 	DeleteMulti(ids []uint) error
@@ -83,6 +84,22 @@ func (p *CategoryGormRepository) GetByID(id uint, withParent bool, withChildren 
 	}
 	if err := query.First(&categoryModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get category by ID")
+		return nil, err
+	}
+	return categoryModel, nil
+}
+
+func (p *CategoryGormRepository) GetBySlug(slug string, withParent bool, withChildren bool) (*models.Category, error) {
+	var categoryModel *models.Category
+	query := p.db
+	if withParent {
+		query = query.Preload("Parent")
+	}
+	if withChildren {
+		query = query.Preload("Children")
+	}
+	if err := query.Where("slug = ?", slug).First(&categoryModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get category by Slug")
 		return nil, err
 	}
 	return categoryModel, nil

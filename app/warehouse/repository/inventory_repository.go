@@ -223,7 +223,7 @@ func (p *InventoryGormRepository) CreateRawMaterialStockIn(plantID uint, storeMo
 		containerModel.StoreID = &storeModel.ID
 		if err := tx.Model(&containerModel).Updates(map[string]interface{}{
 			"stock_level": baseModels.Full,
-			"approved":    false,
+			"approved":    types.ApprovalWait,
 			"product_id":  &contentModel.ProductID,
 			"store_id":    &storeModel.ID,
 		}).Error; err != nil {

@@ -249,5 +249,10 @@ func (ph *Handler) GetContentsByCode(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Container fetched successfully", containerDto))
+	if containerDto.Contents == nil {
+		blankArray := make([]*container.ContentForm, 0)
+		c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Container fetched successfully", blankArray))
+	} else {
+		c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Container fetched successfully", containerDto.Contents))
+	}
 }

@@ -122,7 +122,7 @@ func (p *ContainerGormRepository) GetByCode(plantID uint, code string, needConte
 	var containerModel *models.Container
 	query := p.db
 	if needContents {
-		query = query.Preload("Contents")
+		query = query.Preload("Contents").Preload("Contents.Product")
 	}
 	if needProduct {
 		query = query.Preload("Product")

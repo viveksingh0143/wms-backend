@@ -9,7 +9,7 @@ type IError struct {
 }
 
 func (e *IError) Error() string {
-	return fmt.Sprintf("Validation error: %s", e.Message)
+	return fmt.Sprintf("Validation error (%s): %s", e.Field, e.Message)
 }
 
 func NewInputError(field string, msg string, value interface{}) error {

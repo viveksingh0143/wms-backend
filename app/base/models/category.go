@@ -29,7 +29,7 @@ func (c *Category) BeforeCreate(tx *gorm.DB) (err error) {
 			parent = c.Parent
 		}
 		c.FullPath = parent.FullPath + c.Slug + "/"
-	} else {
+	} else if c.FullPath == "" {
 		c.FullPath = "/" + c.Slug + "/"
 	}
 	return nil

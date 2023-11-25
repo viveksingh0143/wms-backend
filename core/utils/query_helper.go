@@ -17,6 +17,7 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 		dbTag := field.Tag.Get("db")
 		whereTypeTag := field.Tag.Get("whereType")
 		value := v.Field(i).Interface()
+		valueType := reflect.TypeOf(value)
 
 		if dbTag == "" || IsZero(value) {
 			continue
@@ -42,6 +43,19 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				} else if whereTypeTag == "lte" {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s <= ?", tag))
 					orQueryValues = append(orQueryValues, value)
+				} else if whereTypeTag == "in" {
+					if valueType.Kind() == reflect.Slice {
+						sliceValue := reflect.ValueOf(value)
+						num := sliceValue.Len()
+						args := make([]interface{}, num)
+						for j := 0; j < num; j++ {
+							args[j] = sliceValue.Index(j).Interface()
+						}
+						placeholders := strings.TrimRight(strings.Repeat("?,", len(args)), ",")
+
+						orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s IN (%s)", tag, placeholders))
+						orQueryValues = append(orQueryValues, args...)
+					}
 				} else {
 					orQueryStrings = append(orQueryStrings, fmt.Sprintf("%s = ?", tag))
 					orQueryValues = append(orQueryValues, value)
@@ -59,6 +73,18 @@ func BuildQuery(query *gorm.DB, filter interface{}) *gorm.DB {
 				query = query.Where(fmt.Sprintf("%s >= ?", dbTag), value)
 			} else if whereTypeTag == "lte" {
 				query = query.Where(fmt.Sprintf("%s <= ?", dbTag), value)
+			} else if whereTypeTag == "in" {
+				if valueType.Kind() == reflect.Slice {
+					sliceValue := reflect.ValueOf(value)
+					num := sliceValue.Len()
+					args := make([]interface{}, num)
+					for j := 0; j < num; j++ {
+						args[j] = sliceValue.Index(j).Interface()
+					}
+
+					placeholders := strings.TrimRight(strings.Repeat("?,", len(args)), ",")
+					query = query.Where(fmt.Sprintf("%s IN (%s)", dbTag, placeholders), args...)
+				}
 			} else {
 				query = query.Where(fmt.Sprintf("%s = ?", dbTag), value)
 			}

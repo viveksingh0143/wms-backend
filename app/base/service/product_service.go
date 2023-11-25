@@ -12,6 +12,7 @@ type ProductService interface {
 	GetAllProducts(filter product.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*product.Form, int64, error)
 	CreateProduct(productForm *product.Form) error
 	GetProductByID(id uint) (*product.Form, error)
+	GetProductByCode(code string) (*product.Form, error)
 	UpdateProduct(id uint, productForm *product.Form) error
 	DeleteProduct(id uint) error
 	DeleteProducts(ids []uint) error
@@ -45,9 +46,9 @@ func (s *DefaultProductService) GetAllProducts(filter product.Filter, pagination
 }
 
 func (s *DefaultProductService) CreateProduct(productForm *product.Form) error {
-	if s.ExistsByName(productForm.Name, 0) {
-		return responses.NewInputError("name", "already exists", productForm.Name)
-	}
+	//if s.ExistsByName(productForm.Name, 0) {
+	//	return responses.NewInputError("name", "already exists", productForm.Name)
+	//}
 	if s.ExistsBySlug(productForm.Slug, 0) {
 		return responses.NewInputError("slug", "already exists", productForm.Slug)
 	}
@@ -78,10 +79,18 @@ func (s *DefaultProductService) GetProductByID(id uint) (*product.Form, error) {
 	return s.ToForm(data), nil
 }
 
-func (s *DefaultProductService) UpdateProduct(id uint, productForm *product.Form) error {
-	if s.ExistsByName(productForm.Name, id) {
-		return responses.NewInputError("name", "already exists", productForm.Name)
+func (s *DefaultProductService) GetProductByCode(code string) (*product.Form, error) {
+	data, err := s.repo.GetByCode(code)
+	if err != nil {
+		return nil, err
 	}
+	return s.ToForm(data), nil
+}
+
+func (s *DefaultProductService) UpdateProduct(id uint, productForm *product.Form) error {
+	//if s.ExistsByName(productForm.Name, id) {
+	//	return responses.NewInputError("name", "already exists", productForm.Name)
+	//}
 	if s.ExistsBySlug(productForm.Slug, id) {
 		return responses.NewInputError("slug", "already exists", productForm.Slug)
 	}

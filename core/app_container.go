@@ -27,6 +27,7 @@ import (
 	"star-wms/app/base/handlers/storelocation"
 	baseRepository "star-wms/app/base/repository"
 	baseService "star-wms/app/base/service"
+	superadminService "star-wms/app/superadmin/service"
 	"star-wms/app/warehouse/handlers/batchlabel"
 	"star-wms/app/warehouse/handlers/inventory"
 	"star-wms/app/warehouse/handlers/requisitionapproval"
@@ -101,6 +102,7 @@ type AppContainer struct {
 	AuthService                authServices.AuthService
 	AuthHandler                *authHandlers.Handler
 	CacheManager               *cache.Manager
+	BulkService                superadminService.BulkService
 }
 
 func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
@@ -177,6 +179,8 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	stockapprovalHandler := stockapproval.NewStockapprovalHandler(storeService, containerService)
 	requisitionApprovalHandler := requisitionapproval.NewRequisitionApprovalHandler(storeService, requisitionService)
 
+	bulkService := superadminService.NewBulkService(productService, categoryService)
+
 	authService := authServices.NewAuthService(userRepo, roleService, plantService, cacheManager)
 	authHandler := authHandlers.NewAuthHandler(authService)
 
@@ -237,6 +241,7 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 		RMBatchHandler:             rmbatchHandler,
 		StockapprovalHandler:       stockapprovalHandler,
 		RequisitionApprovalHandler: requisitionApprovalHandler,
+		BulkService:                bulkService,
 		AuthService:                authService,
 		AuthHandler:                authHandler,
 		CacheManager:               cacheManager,

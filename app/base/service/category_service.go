@@ -13,6 +13,7 @@ type CategoryService interface {
 	CreateCategory(categoryForm *category.Form) error
 	GetCategoryShortInfoByID(id uint) (*category.Form, error)
 	GetCategoryByID(id uint) (*category.Form, error)
+	GetCategoryBySlug(slug string) (*category.Form, error)
 	UpdateCategory(id uint, categoryForm *category.Form) error
 	DeleteCategory(id uint) error
 	DeleteCategories(ids []uint) error
@@ -74,6 +75,14 @@ func (s *DefaultCategoryService) GetCategoryByID(id uint) (*category.Form, error
 	return s.ToForm(data), nil
 }
 
+func (s *DefaultCategoryService) GetCategoryBySlug(slug string) (*category.Form, error) {
+	data, err := s.repo.GetBySlug(slug, true, true)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(data), nil
+}
+
 func (s *DefaultCategoryService) UpdateCategory(id uint, categoryForm *category.Form) error {
 	if s.ExistsByName(categoryForm.Name, id) {
 		return responses.NewInputError("name", "already exists", categoryForm.Name)
@@ -116,9 +125,10 @@ func (s *DefaultCategoryService) ExistsBySlug(slug string, ID uint) bool {
 
 func (s *DefaultCategoryService) ToModel(categoryForm *category.Form) *models.Category {
 	categoryModel := &models.Category{
-		Name:   categoryForm.Name,
-		Slug:   categoryForm.Slug,
-		Status: categoryForm.Status,
+		Name:     categoryForm.Name,
+		Slug:     categoryForm.Slug,
+		Status:   categoryForm.Status,
+		FullPath: categoryForm.FullPath,
 	}
 	categoryModel.ID = categoryForm.ID
 

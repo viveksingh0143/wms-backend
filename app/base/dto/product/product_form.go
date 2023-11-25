@@ -13,9 +13,9 @@ type Form struct {
 	Code         string            `json:"code" validate:"required,min=4,max=100"`
 	CmsCode      string            `json:"cms_code" validate:"omitempty,min=4,max=100"`
 	Description  string            `json:"description" validate:"required,min=4,max=400"`
-	UnitType     string            `json:"unit_type" validate:"required,oneof='WEIGHT' 'PIECE' 'LIQUID'"`
+	UnitType     string            `json:"unit_type" validate:"required,oneof='WEIGHT' 'PIECE' 'LIQUID' 'LENGTH'"`
 	UnitWeight   float64           `json:"unit_weight" validate:"omitempty,lte=10000"`
-	UnitValue    string            `json:"unit_weight_type" validate:"required,oneof='Kilogram' 'Gram' 'Liter' 'Milliliter' 'Piece'"`
+	UnitValue    string            `json:"unit_weight_type" validate:"required,oneof='PC' 'GM' 'KG' 'MT' 'LT' 'YD' 'SM'"`
 	Status       types.Status      `json:"status" validate:"required,gt=0"`
 	CategoryPath string            `json:"category_path" binding:"-"`
 	Category     *category.Form    `json:"category" validationTag:"category.id" validate:"omitempty,validRelationID,structonly"`

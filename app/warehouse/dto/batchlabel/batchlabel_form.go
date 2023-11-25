@@ -15,9 +15,9 @@ type Form struct {
 	BatchNo         string              `json:"batch_no" validate:"required,min=4,max=100"`
 	SoNumber        string              `json:"so_number" validate:"omitempty,min=4,max=100"`
 	POCategory      string              `json:"po_category" validate:"required,oneof='PRODUCTION' 'TRAILS' 'NPD' 'SAMPLES'"`
-	UnitType        string              `json:"unit_type" validate:"required,oneof='WEIGHT' 'PIECE' 'LIQUID'"`
+	UnitType        string              `json:"unit_type" validate:"required,oneof='WEIGHT' 'PIECE' 'LIQUID' 'LENGTH'"`
 	UnitWeight      float64             `json:"unit_weight" validate:"omitempty,lte=10000"`
-	UnitValue       string              `json:"unit_weight_type" validate:"required,oneof='Kilogram' 'Gram' 'Liter' 'Milliliter' 'Piece'"`
+	UnitValue       string              `json:"unit_weight_type" validate:"required,oneof='PC' 'GM' 'KG' 'MT' 'LT' 'YD' 'SM'"`
 	TargetQuantity  float64             `json:"target_quantity" validate:"required,min=0"`
 	PackageQuantity float64             `json:"package_quantity" validate:"required,min=0"`
 	Status          types.Status        `json:"status" validate:"required,gt=0"`

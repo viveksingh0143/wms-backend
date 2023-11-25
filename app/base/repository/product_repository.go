@@ -14,6 +14,7 @@ type ProductRepository interface {
 	GetAll(filter product.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Product, int64, error)
 	Create(product *models.Product) error
 	GetByID(id uint) (*models.Product, error)
+	GetByCode(code string) (*models.Product, error)
 	Update(product *models.Product) error
 	Delete(id uint) error
 	DeleteMulti(ids []uint) error
@@ -89,6 +90,15 @@ func (p *ProductGormRepository) GetByID(id uint) (*models.Product, error) {
 	var productModel *models.Product
 	if err := p.db.Preload("Ingredients.Ingredient").Preload("Category").First(&productModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get product by ID")
+		return nil, err
+	}
+	return productModel, nil
+}
+
+func (p *ProductGormRepository) GetByCode(code string) (*models.Product, error) {
+	var productModel *models.Product
+	if err := p.db.Preload("Ingredients.Ingredient").Preload("Category").Where("code = ?", code).First(&productModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get product by Code")
 		return nil, err
 	}
 	return productModel, nil
