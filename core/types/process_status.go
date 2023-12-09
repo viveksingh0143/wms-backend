@@ -64,11 +64,11 @@ func (s *ProcessStatus) getStatusFromString(str string) ProcessStatus {
 func (s *ProcessStatus) String() string {
 	switch *s {
 	case ProcessNotStarted:
-		return "NOT STARTED"
+		return "NEW BATCH"
 	case ProcessStarted:
-		return "STARTED"
+		return "RUNNING"
 	case ProcessClosed:
-		return "CLOSED"
+		return "COMPLETED"
 	case ProcessRejected:
 		return "REJECTED"
 	default:

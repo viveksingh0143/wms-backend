@@ -10,7 +10,6 @@ import (
 	"star-wms/core"
 	"star-wms/plugins/cache"
 	"strings"
-	"time"
 )
 
 var csvFilePath string
@@ -21,12 +20,14 @@ var dataImportCmd = &cobra.Command{
 	Short: "Import data to the web application server",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Set the time location
-		location, err := time.LoadLocation(configs.AppCfg.TimeZone)
-		if err != nil {
-			log.Fatal().Msgf("Failed to set time zone: %s", err)
-			return
-		}
-		time.Local = location
+		//if configs.AppCfg.TimeZone != "" {
+		//	location, err := time.LoadLocation(configs.AppCfg.TimeZone)
+		//	if err != nil {
+		//		log.Fatal().Msgf("Failed to set time zone: %s", err)
+		//		return
+		//	}
+		//	time.Local = location
+		//}
 
 		// Database connection
 		customLogger := configs.ZeroLogGormLogger{Log: &log.Logger}
@@ -52,7 +53,7 @@ var dataImportCmd = &cobra.Command{
 			return
 		}
 
-		resourceTypesAllowed := "-MATERIAL-PRODUCT-MACHINE-CUSTOMER-"
+		resourceTypesAllowed := "-MATERIAL-PRODUCT-MACHINE-CUSTOMER-PERMISSION-ROLE-USER-CATEGORY-"
 
 		if resourceType == "" || !strings.Contains(resourceTypesAllowed, fmt.Sprintf("-%s-", resourceType)) {
 			log.Fatal().Msg("Resource info is required and it can be only MATERIAL, PRODUCT")
@@ -78,8 +79,43 @@ var dataImportCmd = &cobra.Command{
 				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
 				return
 			}
+		} else if resourceType == "MACHINE" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
+		} else if resourceType == "CUSTOMER" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
+		} else if resourceType == "PERMISSION" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
+		} else if resourceType == "ROLE" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
+		} else if resourceType == "USER" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
+		} else if resourceType == "CATEGORY" {
+			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			if err != nil {
+				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+				return
+			}
 		}
-
 		log.Info().Msg("Data imported successfully from CSV")
 	},
 }

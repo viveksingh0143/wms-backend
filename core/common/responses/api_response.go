@@ -25,6 +25,7 @@ type APIResponse struct {
 	Metadata    *PaginationMeta `json:"metadata,omitempty"`     // This can be nil if there's no pagination info to provide
 	Errors      []string        `json:"errors"`                 // A slice to hold validation or other errors
 	FieldErrors []*IError       `json:"field_errors,omitempty"` // A slice to hold validation field errors
+	Statistics  interface{}     `json:"statistics"`             // This will hold the statistics data
 }
 
 func NewSuccessResponse(status int, message string) APIResponse {

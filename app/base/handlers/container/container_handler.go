@@ -47,7 +47,11 @@ func (ph *Handler) List(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, responses.NewPageResponse(containers, totalRecords, pagination.Page, pagination.PageSize))
+	pageResponse := responses.NewPageResponse(containers, totalRecords, pagination.Page, pagination.PageSize)
+	if filter.Statistics {
+		pageResponse.Statistics = ph.service.GetStatistics(plantForm.ID, filter)
+	}
+	c.JSON(http.StatusOK, pageResponse)
 }
 
 // Create a new container

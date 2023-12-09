@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"star-wms/app/admin/dto/role"
 	"star-wms/app/admin/models"
 	commonModels "star-wms/core/common/requests"
@@ -54,17 +54,23 @@ func (p *RoleGormRepository) GetAll(filter role.Filter, pagination commonModels.
 func (p *RoleGormRepository) Create(roleModel *models.Role) error {
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		for i, abilityModel := range roleModel.Abilities {
-			if err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "name"}, {Name: "module"}},
-				DoUpdates: clause.AssignmentColumns([]string{"name", "module"}),
-			}).Create(&abilityModel).Error; err != nil {
-				return err
-			}
-			if abilityModel.ID == 0 {
-				var existingAbility models.Ability
-				tx.Where("name = ? AND module = ?", abilityModel.Name, abilityModel.Module).First(&existingAbility)
+			var existingAbility models.Ability
+			result := tx.Where("name = ? AND module = ?", abilityModel.Name, abilityModel.Module).First(&existingAbility)
+
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				// Record does not exist, proceed to insert
+				if err := tx.Create(&abilityModel).Error; err != nil {
+					return err
+				}
+			} else if result.Error != nil {
+				// An error occurred during the check
+				return result.Error
+			} else {
+				// Record exists, update the ID of abilityModel to match the existing record
 				abilityModel.ID = existingAbility.ID
 			}
+
+			// Update roleModel.Abilities with either the new or existing abilityModel
 			roleModel.Abilities[i] = abilityModel
 		}
 		if err := tx.Create(&roleModel).Error; err != nil {
@@ -90,15 +96,20 @@ func (p *RoleGormRepository) GetByID(id uint) (*models.Role, error) {
 func (p *RoleGormRepository) Update(roleModel *models.Role) error {
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		for i, abilityModel := range roleModel.Abilities {
-			if err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "name"}, {Name: "module"}},
-				DoUpdates: clause.AssignmentColumns([]string{"name", "module"}),
-			}).Create(&abilityModel).Error; err != nil {
-				return err
+			var existingAbility models.Ability
+			result := tx.Where("name = ? AND module = ?", abilityModel.Name, abilityModel.Module).First(&existingAbility)
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&abilityModel).Error; err != nil {
+					return err
+				}
+			} else if result.Error != nil {
+				return result.Error
+			} else {
+				// Record exists, you can choose to update it or do nothing
+				// Example: Update existing record with new data
+				// tx.Model(&existingAbility).Updates(abilityModel)
 			}
 			if abilityModel.ID == 0 {
-				var existingAbility models.Ability
-				tx.Where("name = ? AND module = ?", abilityModel.Name, abilityModel.Module).First(&existingAbility)
 				abilityModel.ID = existingAbility.ID
 			}
 			roleModel.Abilities[i] = abilityModel

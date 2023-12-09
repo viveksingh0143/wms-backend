@@ -12,6 +12,7 @@ import (
 type ContainerService interface {
 	GetAllContainersRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
 	GetAllContainers(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
+	GetStatistics(plantID uint, filter container.Filter) *container.Statistics
 	CreateContainer(plantID uint, containerForm *container.Form) error
 	GetContainerByID(plantID uint, id uint) (*container.Form, error)
 	GetContainerByCode(plantID uint, code string, needContents bool, needProduct bool, needStore bool, needLocation bool) (*container.Form, error)
@@ -58,6 +59,16 @@ func (s *DefaultContainerService) GetAllContainers(plantID uint, filter containe
 		return nil, count, err
 	}
 	return s.ToFormSlice(plantID, data), count, err
+}
+
+func (s *DefaultContainerService) GetStatistics(plantID uint, filter container.Filter) *container.Statistics {
+	emptyCount, partialCount, fullCount, waitingCount := s.repo.GetStatistics(plantID, filter)
+	return &container.Statistics{
+		Empty:              emptyCount,
+		Partial:            partialCount,
+		Full:               fullCount,
+		WaitingForApproval: waitingCount,
+	}
 }
 
 func (s *DefaultContainerService) CreateContainer(plantID uint, containerForm *container.Form) error {

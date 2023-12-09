@@ -7,15 +7,18 @@ import (
 
 type Product struct {
 	models.MyModel
-	ProductType  ProductType  `gorm:"type:enum('RAW MATERIAL','FINISHED GOODS','SEMI FINISHED GOODS');not null;default:'RAW MATERIAL';column:product_type"`
-	Name         string       `gorm:"type:varchar(255);not null;column:name"`
-	Slug         string       `gorm:"type:varchar(255);uniqueIndex;not null;column:slug"`
-	Code         string       `gorm:"type:varchar(255);uniqueIndex;not null;column:code"`
-	CmsCode      string       `gorm:"type:varchar(255);index;column:cms_code"`
-	Description  string       `gorm:"type:text;column:description"`
-	UnitType     UnitType     `gorm:"type:enum('WEIGHT','PIECE','LIQUID','LENGTH');not null;default:'WEIGHT';column:unit_type"`
-	UnitWeight   float64      `gorm:"column:unit_weight"`
-	UnitValue    UnitValue    `gorm:"type:enum('PC','GM','KG','MT','LT','YD','SM');column:unit_weight_type;default:'GM'"`
+	//ProductType  ProductType  `gorm:"type:enum('RAW MATERIAL','FINISHED GOODS','SEMI FINISHED GOODS');not null;default:'RAW MATERIAL';column:product_type"`
+	ProductType ProductType `gorm:"type:varchar(255);not null;default:'RAW MATERIAL';column:product_type"`
+	Name        string      `gorm:"type:varchar(255);not null;column:name"`
+	Slug        string      `gorm:"type:varchar(255);uniqueIndex;not null;column:slug"`
+	Code        string      `gorm:"type:varchar(255);uniqueIndex;not null;column:code"`
+	CmsCode     string      `gorm:"type:varchar(255);index;column:cms_code"`
+	Description string      `gorm:"type:text;column:description"`
+	//UnitType     UnitType     `gorm:"type:enum('WEIGHT','PIECE','LIQUID','LENGTH');not null;default:'WEIGHT';column:unit_type"`
+	UnitType   UnitType `gorm:"type:varchar(255);not null;default:'WEIGHT';column:unit_type"`
+	UnitWeight float64  `gorm:"column:unit_weight"`
+	//UnitValue    UnitValue    `gorm:"type:enum('PC','GM','KG','MT','LT','YD','SM');column:unit_weight_type;default:'GM'"`
+	UnitValue    UnitValue    `gorm:"type:varchar(255);column:unit_weight_type;default:'GM'"`
 	Status       types.Status `gorm:"type:int;default:1"`
 	CategoryPath string       `gorm:"index;"`
 	CategoryID   *uint        `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`

@@ -15,8 +15,8 @@ type Requisition struct {
 	Status     types.Status       `gorm:"type:int;default:1"`
 	Approved   types.Approval     `gorm:"type:int;default:3"`
 	StoreID    uint               `gorm:"index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Store      *Store             `gorm:"foreignKey:StoreID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Store      *Store             `gorm:"foreignKey:StoreID;references:ID;"`
 	PlantID    uint               `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Plant      adminModels.Plant  `gorm:"foreignKey:PlantID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Plant      adminModels.Plant  `gorm:"foreignKey:PlantID;references:ID;"`
 	Items      []*RequisitionItem `gorm:"foreignKey:RequisitionID;constraint:OnDelete:CASCADE;"`
 }

@@ -11,9 +11,11 @@ import (
 	commonModels "star-wms/core/common/requests"
 	"star-wms/core/types"
 	"star-wms/core/utils"
+	"strings"
 )
 
 type ContainerRepository interface {
+	GetStatistics(plantID uint, filter container.Filter) (int64, int64, int64, int64)
 	GetAllRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error)
 	GetAll(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error)
 	Create(plantID uint, container *models.Container) error
@@ -38,6 +40,41 @@ type ContainerGormRepository struct {
 
 func NewContainerGormRepository(database *gorm.DB) ContainerRepository {
 	return &ContainerGormRepository{db: database}
+}
+
+func (p *ContainerGormRepository) GetStatistics(plantID uint, filter container.Filter) (int64, int64, int64, int64) {
+	var emptyCount int64 = 0
+	var partialCount int64 = 0
+	var fullCount int64 = 0
+	var waitingCount int64 = 0
+
+	type StockLevelStatistics struct {
+		StockLevel string
+		Count      int64
+	}
+	var results []StockLevelStatistics
+	query := p.db.Model(&models.Container{}).Select("stock_level, count(*) as count")
+	query.Where("plant_id = ?", plantID)
+	query = utils.BuildQuery(query, filter)
+	query.Group("stock_level").Scan(&results)
+
+	for _, result := range results {
+		if strings.ToUpper(result.StockLevel) == "EMPTY" {
+			emptyCount = result.Count
+		} else if strings.ToUpper(result.StockLevel) == "PARTIAL" {
+			partialCount = result.Count
+		} else if strings.ToUpper(result.StockLevel) == "FULL" {
+			fullCount = result.Count
+		}
+	}
+
+	waitingQuery := p.db.Model(&models.Container{}).
+		Where("plant_id = ?", plantID).
+		Where("stock_level != ?", "EMPTY").
+		Where("approved != ?", 1)
+	waitingQuery = utils.BuildQuery(waitingQuery, filter)
+	waitingQuery.Count(&waitingCount)
+	return emptyCount, partialCount, fullCount, waitingCount
 }
 
 func (p *ContainerGormRepository) GetAllRequiredApproval(plantID uint, storeForms []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error) {
