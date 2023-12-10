@@ -12,6 +12,7 @@ type PlantService interface {
 	GetAllPlants(filter plant.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*plant.Form, int64, error)
 	CreatePlant(plantForm *plant.Form) error
 	GetPlantByID(id uint) (*plant.Form, error)
+	GetPlantByCode(code string) (*plant.Form, error)
 	UpdatePlant(id uint, plantForm *plant.Form) error
 	DeletePlant(id uint) error
 	DeletePlants(ids []uint) error
@@ -54,6 +55,14 @@ func (s *DefaultPlantService) CreatePlant(plantForm *plant.Form) error {
 
 func (s *DefaultPlantService) GetPlantByID(id uint) (*plant.Form, error) {
 	data, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(data), nil
+}
+
+func (s *DefaultPlantService) GetPlantByCode(code string) (*plant.Form, error) {
+	data, err := s.repo.GetByCode(code)
 	if err != nil {
 		return nil, err
 	}

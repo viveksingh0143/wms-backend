@@ -5,6 +5,7 @@ import (
 	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	"star-wms/app/base/repository"
+	"star-wms/core/common/dto"
 	commonModels "star-wms/core/common/requests"
 	"star-wms/core/common/responses"
 )
@@ -32,6 +33,9 @@ type ContainerService interface {
 	ToContentFormSlice(plantID uint, containerModels []*models.ContainerContent) []*container.ContentForm
 	ApproveContainer(plantID uint, id uint) error
 	ApproveContainers(plantID uint, ids []uint) error
+
+	ReportStockLevels(plantID uint, filter container.Filter) []*dto.ReportDto
+	ReportApprovals(plantID uint, filter container.Filter) []*dto.ReportDto
 }
 
 type DefaultContainerService struct {
@@ -267,4 +271,12 @@ func (s *DefaultContainerService) ToContentFormSlice(plantID uint, contentModels
 		data = append(data, s.ToContentForm(plantID, contentModel))
 	}
 	return data
+}
+
+func (s *DefaultContainerService) ReportStockLevels(plantID uint, filter container.Filter) []*dto.ReportDto {
+	return s.repo.GetReportStockLevels(plantID, filter)
+}
+
+func (s *DefaultContainerService) ReportApprovals(plantID uint, filter container.Filter) []*dto.ReportDto {
+	return s.repo.GetReportApprovals(plantID, filter)
 }

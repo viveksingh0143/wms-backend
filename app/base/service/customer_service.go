@@ -12,6 +12,7 @@ type CustomerService interface {
 	GetAllCustomers(plantID uint, filter customer.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*customer.Form, int64, error)
 	CreateCustomer(plantID uint, customerForm *customer.Form) error
 	GetCustomerByID(plantID uint, id uint) (*customer.Form, error)
+	GetCustomerByCode(plantID uint, code string) (*customer.Form, error)
 	UpdateCustomer(plantID uint, id uint, customerForm *customer.Form) error
 	DeleteCustomer(plantID uint, id uint) error
 	DeleteCustomers(plantID uint, ids []uint) error
@@ -42,9 +43,6 @@ func (s *DefaultCustomerService) GetAllCustomers(plantID uint, filter customer.F
 }
 
 func (s *DefaultCustomerService) CreateCustomer(plantID uint, customerForm *customer.Form) error {
-	if s.ExistsByName(plantID, customerForm.Name, 0) {
-		return responses.NewInputError("name", "already exists", customerForm.Name)
-	}
 	if s.ExistsByCode(plantID, customerForm.Code, 0) {
 		return responses.NewInputError("code", "already exists", customerForm.Code)
 	}
@@ -60,10 +58,18 @@ func (s *DefaultCustomerService) GetCustomerByID(plantID uint, id uint) (*custom
 	return s.ToForm(plantID, data), nil
 }
 
-func (s *DefaultCustomerService) UpdateCustomer(plantID uint, id uint, customerForm *customer.Form) error {
-	if s.ExistsByName(plantID, customerForm.Name, id) {
-		return responses.NewInputError("name", "already exists", customerForm.Name)
+func (s *DefaultCustomerService) GetCustomerByCode(plantID uint, code string) (*customer.Form, error) {
+	data, err := s.repo.GetByCode(plantID, code)
+	if err != nil {
+		return nil, err
 	}
+	return s.ToForm(plantID, data), nil
+}
+
+func (s *DefaultCustomerService) UpdateCustomer(plantID uint, id uint, customerForm *customer.Form) error {
+	//if s.ExistsByName(plantID, customerForm.Name, id) {
+	//	return responses.NewInputError("name", "already exists", customerForm.Name)
+	//}
 	if s.ExistsByCode(plantID, customerForm.Code, id) {
 		return responses.NewInputError("code", "already exists", customerForm.Code)
 	}

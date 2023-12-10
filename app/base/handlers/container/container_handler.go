@@ -260,3 +260,33 @@ func (ph *Handler) GetContentsByCode(c *gin.Context) {
 		c.JSON(http.StatusOK, responses.NewSuccessDataResponse(http.StatusOK, "Container fetched successfully", containerDto.Contents))
 	}
 }
+
+func (ph *Handler) ReportStockLevels(c *gin.Context) {
+	plantValue, _ := c.Get(auth.AuthPlantKey)
+	plantForm, _ := plantValue.(plant.Form)
+
+	var filter container.Filter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		resp := responses.NewValidationErrorResponse(err, filter)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	reports := ph.service.ReportStockLevels(plantForm.ID, filter)
+	dataResponse := responses.NewDataResponse(reports)
+	c.JSON(http.StatusOK, dataResponse)
+}
+
+func (ph *Handler) ReportApprovals(c *gin.Context) {
+	plantValue, _ := c.Get(auth.AuthPlantKey)
+	plantForm, _ := plantValue.(plant.Form)
+
+	var filter container.Filter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		resp := responses.NewValidationErrorResponse(err, filter)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	reports := ph.service.ReportApprovals(plantForm.ID, filter)
+	dataResponse := responses.NewDataResponse(reports)
+	c.JSON(http.StatusOK, dataResponse)
+}

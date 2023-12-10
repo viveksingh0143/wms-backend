@@ -11,6 +11,9 @@ func SetupContainerRoutes(r *gin.RouterGroup, containerHandler *Handler) {
 		api.GET("/getcontents", containerHandler.GetContentsByCode)
 		api.POST("/marked-full", containerHandler.MarkedFull)
 
+		api.GET("/reports/stock-levels", containerHandler.ReportStockLevels)
+		api.GET("/reports/approvals", containerHandler.ReportApprovals)
+
 		api.GET("", containerHandler.List)
 		api.POST("", containerHandler.Create)
 		api.GET("/:id", containerHandler.Get)

@@ -35,6 +35,13 @@ func NewSuccessResponse(status int, message string) APIResponse {
 	}
 }
 
+func NewDataResponse(data interface{}) APIResponse {
+	return APIResponse{
+		Status: http.StatusOK,
+		Data:   data,
+	}
+}
+
 func NewSuccessDataResponse(status int, message string, data interface{}) APIResponse {
 	return APIResponse{
 		Status:  status,

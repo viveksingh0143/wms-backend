@@ -8,7 +8,7 @@ import (
 
 type Machine struct {
 	models.MyModel
-	Name    string            `gorm:"type:varchar(255);uniqueIndex;not null;column:name"`
+	Name    string            `gorm:"type:varchar(255);not null;column:name"`
 	Code    string            `gorm:"type:varchar(255);uniqueIndex;not null;column:code"`
 	Status  types.Status      `gorm:"type:int;default:1"`
 	PlantID uint              `gorm:"not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

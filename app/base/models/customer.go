@@ -8,7 +8,7 @@ import (
 
 type Customer struct {
 	models.MyModel
-	Name             string            `gorm:"type:varchar(255);uniqueIndex;not null;column:name"`
+	Name             string            `gorm:"type:varchar(255);not null;column:name"`
 	Code             string            `gorm:"type:varchar(255);uniqueIndex;not null;column:code"`
 	ContactPerson    string            `gorm:"type:varchar(255)"`
 	BillingAddress1  string            `gorm:"type:varchar(255)"`

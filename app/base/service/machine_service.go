@@ -12,6 +12,7 @@ type MachineService interface {
 	GetAllMachines(plantID uint, filter machine.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*machine.Form, int64, error)
 	CreateMachine(plantID uint, machineForm *machine.Form) error
 	GetMachineByID(plantID uint, id uint) (*machine.Form, error)
+	GetMachineByCode(plantID uint, code string) (*machine.Form, error)
 	UpdateMachine(plantID uint, id uint, machineForm *machine.Form) error
 	DeleteMachine(plantID uint, id uint) error
 	DeleteMachines(plantID uint, ids []uint) error
@@ -42,9 +43,6 @@ func (s *DefaultMachineService) GetAllMachines(plantID uint, filter machine.Filt
 }
 
 func (s *DefaultMachineService) CreateMachine(plantID uint, machineForm *machine.Form) error {
-	if s.ExistsByName(plantID, machineForm.Name, 0) {
-		return responses.NewInputError("name", "already exists", machineForm.Name)
-	}
 	if s.ExistsByCode(plantID, machineForm.Code, 0) {
 		return responses.NewInputError("code", "already exists", machineForm.Code)
 	}
@@ -60,10 +58,18 @@ func (s *DefaultMachineService) GetMachineByID(plantID uint, id uint) (*machine.
 	return s.ToForm(plantID, data), nil
 }
 
-func (s *DefaultMachineService) UpdateMachine(plantID uint, id uint, machineForm *machine.Form) error {
-	if s.ExistsByName(plantID, machineForm.Name, id) {
-		return responses.NewInputError("name", "already exists", machineForm.Name)
+func (s *DefaultMachineService) GetMachineByCode(plantID uint, code string) (*machine.Form, error) {
+	data, err := s.repo.GetByCode(plantID, code)
+	if err != nil {
+		return nil, err
 	}
+	return s.ToForm(plantID, data), nil
+}
+
+func (s *DefaultMachineService) UpdateMachine(plantID uint, id uint, machineForm *machine.Form) error {
+	//if s.ExistsByName(plantID, machineForm.Name, id) {
+	//	return responses.NewInputError("name", "already exists", machineForm.Name)
+	//}
 	if s.ExistsByCode(plantID, machineForm.Code, id) {
 		return responses.NewInputError("code", "already exists", machineForm.Code)
 	}

@@ -179,7 +179,7 @@ func NewAppContainer(db *gorm.DB, cacheManager *cache.Manager) *AppContainer {
 	stockapprovalHandler := stockapproval.NewStockapprovalHandler(storeService, containerService)
 	requisitionApprovalHandler := requisitionapproval.NewRequisitionApprovalHandler(storeService, requisitionService)
 
-	bulkService := superadminService.NewBulkService(productService, categoryService)
+	bulkService := superadminService.NewBulkService(plantService, productService, categoryService, machineService, customerService, permissionService, roleService, userService)
 
 	authService := authServices.NewAuthService(userRepo, roleService, plantService, cacheManager)
 	authHandler := authHandlers.NewAuthHandler(authService)

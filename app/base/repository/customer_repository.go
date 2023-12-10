@@ -13,6 +13,7 @@ type CustomerRepository interface {
 	GetAll(plantID uint, filter customer.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Customer, int64, error)
 	Create(plantID uint, customer *models.Customer) error
 	GetByID(plantID uint, id uint) (*models.Customer, error)
+	GetByCode(plantID uint, code string) (*models.Customer, error)
 	Update(plantID uint, customer *models.Customer) error
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
@@ -71,6 +72,15 @@ func (p *CustomerGormRepository) GetByID(plantID uint, id uint) (*models.Custome
 	var customerModel *models.Customer
 	if err := p.db.Where("plant_id = ?", plantID).First(&customerModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get customer by ID")
+		return nil, err
+	}
+	return customerModel, nil
+}
+
+func (p *CustomerGormRepository) GetByCode(plantID uint, code string) (*models.Customer, error) {
+	var customerModel *models.Customer
+	if err := p.db.Where("plant_id = ?", plantID).Where("code = ?", code).First(&customerModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get customer by Code")
 		return nil, err
 	}
 	return customerModel, nil

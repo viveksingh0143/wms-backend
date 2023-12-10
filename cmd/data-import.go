@@ -14,6 +14,7 @@ import (
 
 var csvFilePath string
 var resourceType string
+var plantCode string
 
 var dataImportCmd = &cobra.Command{
 	Use:   "data-import",
@@ -80,41 +81,41 @@ var dataImportCmd = &cobra.Command{
 				return
 			}
 		} else if resourceType == "MACHINE" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			_, err = appContainer.BulkService.ImportMachineDataFromCSV(plantCode, csvFilePath)
 			if err != nil {
 				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
 				return
 			}
 		} else if resourceType == "CUSTOMER" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
+			_, err = appContainer.BulkService.ImportCustomerDataFromCSV(plantCode, csvFilePath)
 			if err != nil {
 				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
 				return
 			}
 		} else if resourceType == "PERMISSION" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
-			if err != nil {
-				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
-				return
-			}
+			//_, err = appContainer.BulkService.ImportPermissionDataFromCSV(csvFilePath)
+			//if err != nil {
+			//	log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+			//	return
+			//}
 		} else if resourceType == "ROLE" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
-			if err != nil {
-				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
-				return
-			}
+			//_, err = appContainer.BulkService.ImportRoleDataFromCSV(csvFilePath)
+			//if err != nil {
+			//	log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+			//	return
+			//}
 		} else if resourceType == "USER" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
-			if err != nil {
-				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
-				return
-			}
+			//_, err = appContainer.BulkService.ImportUserDataFromCSV(csvFilePath)
+			//if err != nil {
+			//	log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+			//	return
+			//}
 		} else if resourceType == "CATEGORY" {
-			_, err = appContainer.BulkService.ImportProductDataFromCSV(csvFilePath)
-			if err != nil {
-				log.Fatal().Msgf("Failed to import data from CSV: %v", err)
-				return
-			}
+			//_, err = appContainer.BulkService.ImportCategoryDataFromCSV(csvFilePath)
+			//if err != nil {
+			//	log.Fatal().Msgf("Failed to import data from CSV: %v", err)
+			//	return
+			//}
 		}
 		log.Info().Msg("Data imported successfully from CSV")
 	},
@@ -123,5 +124,6 @@ var dataImportCmd = &cobra.Command{
 func init() {
 	dataImportCmd.Flags().StringVarP(&csvFilePath, "file", "f", "", "Path to the CSV file to import")
 	dataImportCmd.Flags().StringVarP(&resourceType, "resource", "r", "", "Type of resource")
+	dataImportCmd.Flags().StringVarP(&plantCode, "plant", "p", "", "Plant Code")
 	rootCmd.AddCommand(dataImportCmd)
 }

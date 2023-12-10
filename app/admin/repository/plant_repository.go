@@ -13,6 +13,7 @@ type PlantRepository interface {
 	GetAll(filter plant.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Plant, int64, error)
 	Create(plant *models.Plant) error
 	GetByID(id uint) (*models.Plant, error)
+	GetByCode(code string) (*models.Plant, error)
 	Update(plant *models.Plant) error
 	Delete(id uint) error
 	DeleteMulti(ids []uint) error
@@ -69,6 +70,15 @@ func (p *PlantGormRepository) GetByID(id uint) (*models.Plant, error) {
 	var plantModel *models.Plant
 	if err := p.db.First(&plantModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get plant by ID")
+		return nil, err
+	}
+	return plantModel, nil
+}
+
+func (p *PlantGormRepository) GetByCode(code string) (*models.Plant, error) {
+	var plantModel *models.Plant
+	if err := p.db.Where("code = ?", code).First(&plantModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get plant by Code")
 		return nil, err
 	}
 	return plantModel, nil

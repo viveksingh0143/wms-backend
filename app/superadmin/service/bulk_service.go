@@ -1,9 +1,13 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	adminService "star-wms/app/admin/service"
 	"star-wms/app/base/dto/category"
+	"star-wms/app/base/dto/customer"
+	"star-wms/app/base/dto/machine"
 	"star-wms/app/base/dto/product"
 	baseService "star-wms/app/base/service"
 	"star-wms/core/types"
@@ -15,15 +19,27 @@ import (
 type BulkService interface {
 	ImportMaterialDataFromCSV(csvFilePath string) (bool, error)
 	ImportProductDataFromCSV(csvFilePath string) (bool, error)
+	ImportMachineDataFromCSV(plantCode string, csvFilePath string) (bool, error)
+	ImportCustomerDataFromCSV(plantCode string, csvFilePath string) (bool, error)
+	ImportPermissionDataFromCSV(csvFilePath string) (bool, error)
+	ImportRoleDataFromCSV(csvFilePath string) (bool, error)
+	ImportUserDataFromCSV(csvFilePath string) (bool, error)
+	ImportCategoryDataFromCSV(csvFilePath string) (bool, error)
 }
 
 type DefaultBulkService struct {
-	productService  baseService.ProductService
-	categoryService baseService.CategoryService
+	plantService      adminService.PlantService
+	productService    baseService.ProductService
+	categoryService   baseService.CategoryService
+	machineService    baseService.MachineService
+	customerService   baseService.CustomerService
+	permissionService adminService.PermissionService
+	roleService       adminService.RoleService
+	userService       adminService.UserService
 }
 
-func NewBulkService(productService baseService.ProductService, categoryService baseService.CategoryService) BulkService {
-	return &DefaultBulkService{productService: productService, categoryService: categoryService}
+func NewBulkService(plantService adminService.PlantService, productService baseService.ProductService, categoryService baseService.CategoryService, machineService baseService.MachineService, customerService baseService.CustomerService, permissionService adminService.PermissionService, roleService adminService.RoleService, userService adminService.UserService) BulkService {
+	return &DefaultBulkService{plantService: plantService, productService: productService, categoryService: categoryService, machineService: machineService, customerService: customerService, permissionService: permissionService, roleService: roleService, userService: userService}
 }
 
 func (s *DefaultBulkService) ImportMaterialDataFromCSV(csvFilePath string) (bool, error) {
@@ -474,4 +490,173 @@ func (s *DefaultBulkService) getOrCreateRootCategories() (*category.Form, *categ
 		return nil, nil, nil, nil, err
 	}
 	return materialsCat, productsCat, fgCat, sfgCat, nil
+}
+
+func (s *DefaultBulkService) ImportMachineDataFromCSV(plantCode string, csvFilePath string) (bool, error) {
+	if plantCode == "" {
+		log.Fatal().Msg("Plant code needed to import")
+		return false, errors.New("plant code needed to import")
+	}
+	plant, err := s.plantService.GetPlantByCode(plantCode)
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := utils.ProcessCsvFile(csvFilePath)
+	if err != nil {
+		return false, err
+	}
+	uniqueMachines := make(map[string]*machine.Form)
+	for _, row := range rows {
+		name := row["name"]
+		code := row["code"]
+		status := types.StatusActive
+		switch strings.ToLower(row["status"]) {
+		case "inactive":
+			status = types.StatusInactive
+		case "banned":
+			status = types.StatusBanned
+		}
+		if name == "" || code == "" {
+			continue
+		}
+		uniqueMachines[code] = &machine.Form{
+			Name:   name,
+			Code:   code,
+			Status: status,
+		}
+	}
+
+	// Iterate over unique categories and update the database
+	for machineCode := range uniqueMachines {
+		uniqueMachine := uniqueMachines[machineCode]
+		//exists := s.machineService.ExistsByCode(plant.ID, uniqueMachine.Code, 0)
+		machineData, err := s.machineService.GetMachineByCode(plant.ID, uniqueMachine.Code)
+		if err != nil {
+			err = s.machineService.CreateMachine(plant.ID, uniqueMachine)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to create machine, whose code is: %s", uniqueMachine.Code)
+			} else {
+				log.Info().Msg("Machine created successfully")
+			}
+		} else {
+			err = s.machineService.UpdateMachine(plant.ID, machineData.ID, uniqueMachine)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to update machine, whose code is: %s", uniqueMachine.Code)
+			} else {
+				log.Info().Msg("Machine updated successfully")
+			}
+		}
+		//if !exists {
+		//	err = s.machineService.CreateMachine(plant.ID, uniqueMachine)
+		//	if err != nil {
+		//		log.Error().Err(err).Msg("Failed to create machine")
+		//		return false, err
+		//	} else {
+		//		log.Info().Msg("Machine created successfully")
+		//	}
+		//} else {
+		//	log.Info().Msg("Machine already exists")
+		//}
+	}
+	return true, nil
+}
+
+func (s *DefaultBulkService) ImportCustomerDataFromCSV(plantCode string, csvFilePath string) (bool, error) {
+	if plantCode == "" {
+		log.Fatal().Msg("Plant code needed to import")
+		return false, errors.New("plant code needed to import")
+	}
+	plant, err := s.plantService.GetPlantByCode(plantCode)
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := utils.ProcessCsvFile(csvFilePath)
+	if err != nil {
+		return false, err
+	}
+	uniqueCustomers := make(map[string]*customer.Form)
+	for _, row := range rows {
+		name := row["name"]
+		code := row["code"]
+		contactperson := row["contactperson"]
+		billingaddress1 := row["billingaddress1"]
+		billingaddress2 := row["billingaddress2"]
+		billingstate := row["billingstate"]
+		billingcountry := row["billingcountry"]
+		billingpincode := row["billingpincode"]
+		shippingaddress1 := row["shippingaddress1"]
+		shippingaddress2 := row["shippingaddress2"]
+		shippingstate := row["shippingstate"]
+		shippingcountry := row["shippingcountry"]
+		shippingpincode := row["shippingpincode"]
+		status := types.StatusActive
+		switch strings.ToLower(row["status"]) {
+		case "inactive":
+			status = types.StatusInactive
+		case "banned":
+			status = types.StatusBanned
+		}
+
+		if name == "" || code == "" {
+			continue
+		}
+
+		uniqueCustomers[code] = &customer.Form{
+			Name:             name,
+			Code:             code,
+			ContactPerson:    contactperson,
+			BillingAddress1:  billingaddress1,
+			BillingAddress2:  billingaddress2,
+			BillingState:     billingstate,
+			BillingCountry:   billingcountry,
+			BillingPincode:   billingpincode,
+			ShippingAddress1: shippingaddress1,
+			ShippingAddress2: shippingaddress2,
+			ShippingState:    shippingstate,
+			ShippingCountry:  shippingcountry,
+			ShippingPincode:  shippingpincode,
+			Status:           status,
+		}
+	}
+
+	// Iterate over unique categories and update the database
+	for customerCode := range uniqueCustomers {
+		uniqueCustomer := uniqueCustomers[customerCode]
+		//exists := s.customerService.ExistsByCode(plant.ID, uniqueCustomer.Code, 0)
+		customerData, err := s.customerService.GetCustomerByCode(plant.ID, uniqueCustomer.Code)
+		if err != nil {
+			err = s.customerService.CreateCustomer(plant.ID, uniqueCustomer)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to create customer, whose code is: %s", uniqueCustomer.Code)
+			} else {
+				log.Info().Msg("Customer created successfully")
+			}
+		} else {
+			err = s.customerService.UpdateCustomer(plant.ID, customerData.ID, uniqueCustomer)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to update customer, whose code is: %s", uniqueCustomer.Code)
+			} else {
+				log.Info().Msg("Customer updated successfully")
+			}
+		}
+	}
+	return true, nil
+}
+
+func (s *DefaultBulkService) ImportPermissionDataFromCSV(csvFilePath string) (bool, error) {
+	return true, nil
+}
+
+func (s *DefaultBulkService) ImportRoleDataFromCSV(csvFilePath string) (bool, error) {
+	return true, nil
+}
+
+func (s *DefaultBulkService) ImportUserDataFromCSV(csvFilePath string) (bool, error) {
+	return true, nil
+}
+
+func (s *DefaultBulkService) ImportCategoryDataFromCSV(csvFilePath string) (bool, error) {
+	return true, nil
 }

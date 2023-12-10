@@ -8,6 +8,7 @@ import (
 	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	warehouseModels "star-wms/app/warehouse/models"
+	"star-wms/core/common/dto"
 	commonModels "star-wms/core/common/requests"
 	"star-wms/core/types"
 	"star-wms/core/utils"
@@ -32,6 +33,9 @@ type ContainerRepository interface {
 	ApproveMulti(plantID uint, ids []uint) error
 	Reject(plantID uint, id uint) error
 	RejectMulti(plantID uint, ids []uint) error
+
+	GetReportStockLevels(plantID uint, filter container.Filter) []*dto.ReportDto
+	GetReportApprovals(plantID uint, filter container.Filter) []*dto.ReportDto
 }
 
 type ContainerGormRepository struct {
@@ -428,4 +432,24 @@ func (p *ContainerGormRepository) RejectMulti(plantID uint, ids []uint) error {
 		}
 		return nil
 	})
+}
+
+func (p *ContainerGormRepository) GetReportStockLevels(plantID uint, filter container.Filter) []*dto.ReportDto {
+	var results []*dto.ReportDto
+	query := p.db.Model(&models.Container{}).Select("stock_level as name, count(*) as count")
+	query.Where("plant_id = ?", plantID)
+	query = utils.BuildQuery(query, filter)
+	query.Group("stock_level").Scan(&results)
+	return results
+}
+
+func (p *ContainerGormRepository) GetReportApprovals(plantID uint, filter container.Filter) []*dto.ReportDto {
+	var results []*dto.ReportDto
+	query := p.db.Model(&models.Container{}).
+		Select("approved as name, count(*) as count").
+		Where("stock_level != ?", "EMPTY").
+		Where("plant_id = ?", plantID)
+	query = utils.BuildQuery(query, filter)
+	query.Group("approved").Scan(&results)
+	return results
 }

@@ -13,6 +13,7 @@ type MachineRepository interface {
 	GetAll(plantID uint, filter machine.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Machine, int64, error)
 	Create(plantID uint, machine *models.Machine) error
 	GetByID(plantID uint, id uint) (*models.Machine, error)
+	GetByCode(plantID uint, code string) (*models.Machine, error)
 	Update(plantID uint, machine *models.Machine) error
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
@@ -71,6 +72,15 @@ func (p *MachineGormRepository) GetByID(plantID uint, id uint) (*models.Machine,
 	var machineModel *models.Machine
 	if err := p.db.Where("plant_id = ?", plantID).First(&machineModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get machine by ID")
+		return nil, err
+	}
+	return machineModel, nil
+}
+
+func (p *MachineGormRepository) GetByCode(plantID uint, code string) (*models.Machine, error) {
+	var machineModel *models.Machine
+	if err := p.db.Where("plant_id = ?", plantID).Where("code = ?", code).First(&machineModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get machine by Code")
 		return nil, err
 	}
 	return machineModel, nil
