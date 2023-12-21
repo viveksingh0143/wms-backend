@@ -9,6 +9,7 @@ import (
 	"star-wms/app/warehouse/dto/inventory"
 	"star-wms/app/warehouse/models"
 	"star-wms/app/warehouse/repository"
+	"star-wms/core/app"
 	commonModels "star-wms/core/common/requests"
 	"star-wms/core/common/responses"
 	"star-wms/core/types"
@@ -17,7 +18,7 @@ import (
 type InventoryService interface {
 	CreateRawMaterialStockIn(plantID uint, inventoryForm *inventory.RawMaterialStockInForm) error
 	CreateFinishedGoodsStockIn(plantID uint, inventoryForm *inventory.FinishedGoodsStockInForm) error
-	CreateFinishedGoodStockIn(plantID uint, inventoryForm *inventory.FinishedGoodStockInForm) error
+	CreateFinishedGoodStockIn(plantID uint, inventoryForm *inventory.FinishedGoodStockInForm) (*batchlabel.StickerForm, error)
 	AttachContainerToLocation(plantID uint, attachForm *inventory.AttachContainerForm) error
 	GetAllInventorys(plantID uint, filter inventory.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*inventory.Form, int64, error)
 	GetInventoryByID(plantID uint, id uint) (*inventory.Form, error)
@@ -233,31 +234,33 @@ func (s *DefaultInventoryService) CreateFinishedGoodsStockIn(plantID uint, inven
 	return s.repo.CreateFinishedGoodsStockIn(plantID, storeModel, containerModel, stickerModels)
 }
 
-func (s *DefaultInventoryService) CreateFinishedGoodStockIn(plantID uint, inventoryForm *inventory.FinishedGoodStockInForm) error {
-	if !s.storeService.ExistsById(plantID, inventoryForm.Store.ID) {
-		return responses.NewInputError("store.id", "store not exists", inventoryForm.Store.ID)
+func (s *DefaultInventoryService) CreateFinishedGoodStockIn(plantID uint, inventoryForm *inventory.FinishedGoodStockInForm) (*batchlabel.StickerForm, error) {
+	store, err := s.storeService.GetStoreByCode(plantID, app.APP_FG_STORE_CODE)
+
+	if err != nil {
+		return nil, responses.NewInputError("barcode", "No finished goods store found", app.APP_FG_STORE_CODE)
 	}
 	containerForm, err := s.containerService.GetContainerByCode(plantID, inventoryForm.ContainerCode, false, false, false, false)
 	if err != nil {
-		return responses.NewInputError("container_code", fmt.Sprintf("givem (%s) container not exists", inventoryForm.ContainerCode), inventoryForm.ContainerCode)
+		return nil, responses.NewInputError("container_code", fmt.Sprintf("givem (%s) container not exists", inventoryForm.ContainerCode), inventoryForm.ContainerCode)
 	} else if containerForm.StockLevel == baseModels.Full {
-		return responses.NewInputError("container_code", fmt.Sprintf("givem (%s) container is already full", inventoryForm.ContainerCode), inventoryForm.ContainerCode)
+		return nil, responses.NewInputError("container_code", fmt.Sprintf("givem (%s) container is already full", inventoryForm.ContainerCode), inventoryForm.ContainerCode)
 	}
 
 	stickerForms := make([]*batchlabel.StickerForm, 0)
 	sticker, err := s.batchlabelService.GetStickerByBarcodePlantwise(plantID, inventoryForm.Barcode)
 	if err != nil {
-		return responses.NewInputError("barcodes", fmt.Sprintf("given (%s) barcode not exists", inventoryForm.Barcode), inventoryForm.Barcode)
+		return nil, responses.NewInputError("barcodes", fmt.Sprintf("given (%s) barcode not exists", inventoryForm.Barcode), inventoryForm.Barcode)
 	} else if sticker.IsUsed {
-		return responses.NewInputError("barcodes", fmt.Sprintf("givem (%s) barcode already used", inventoryForm.Barcode), inventoryForm.Barcode)
+		return nil, responses.NewInputError("barcodes", fmt.Sprintf("givem (%s) barcode already used", inventoryForm.Barcode), inventoryForm.Barcode)
 	} else if containerForm.ProductID != nil && sticker.ProductID != *containerForm.ProductID {
-		return responses.NewInputError("barcodes", fmt.Sprintf("barcode (%s) having different product than container", inventoryForm.Barcode), inventoryForm.Barcode)
+		return nil, responses.NewInputError("barcodes", fmt.Sprintf("barcode (%s) having different product than container", inventoryForm.Barcode), inventoryForm.Barcode)
 	}
 	stickerForms = append(stickerForms, sticker)
-	storeModel := s.storeService.ToModel(plantID, inventoryForm.Store)
+	storeModel := s.storeService.ToModel(plantID, store)
 	containerModel := s.containerService.ToModel(plantID, containerForm)
 	stickerModels := s.batchlabelService.ToStickerModelFormSlice(plantID, stickerForms)
-	return s.repo.CreateFinishedGoodsStockIn(plantID, storeModel, containerModel, stickerModels)
+	return sticker, s.repo.CreateFinishedGoodsStockIn(plantID, storeModel, containerModel, stickerModels)
 }
 
 func (s *DefaultInventoryService) AttachContainerToLocation(plantID uint, attachForm *inventory.AttachContainerForm) error {

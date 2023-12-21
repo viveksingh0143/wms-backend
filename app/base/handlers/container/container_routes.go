@@ -10,6 +10,7 @@ func SetupContainerRoutes(r *gin.RouterGroup, containerHandler *Handler) {
 		api.DELETE("/bulk-update", containerHandler.DeleteBulk)
 		api.GET("/getcontents", containerHandler.GetContentsByCode)
 		api.POST("/marked-full", containerHandler.MarkedFull)
+		api.GET("/reports", containerHandler.GetReport)
 
 		api.GET("/reports/stock-levels", containerHandler.ReportStockLevels)
 		api.GET("/reports/approvals", containerHandler.ReportApprovals)

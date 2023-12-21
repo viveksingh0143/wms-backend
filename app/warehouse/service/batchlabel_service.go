@@ -56,6 +56,11 @@ func NewBatchlabelService(batchlabelRepository repository.BatchlabelRepository, 
 	return &DefaultBatchlabelService{batchlabelRepository: batchlabelRepository, stickerRepository: stickerRepository, customerService: customerService, productService: productService, machineService: machineService, joborderService: joborderService}
 }
 
+const (
+	SerialNumberFormat = "%04d"
+	PacketNoFormat     = "%04d"
+)
+
 func (s *DefaultBatchlabelService) GetAllBatchlabels(plantID uint, filter batchlabel.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*batchlabel.Form, int64, error) {
 	data, count, err := s.batchlabelRepository.GetAll(plantID, filter, pagination, sorting)
 	if err != nil {
@@ -318,26 +323,20 @@ func (s *DefaultBatchlabelService) CreateSticker(plantID uint, batchlabelID uint
 
 	var stickers = make([]*models.Sticker, 0, multiStickerForm.StickersToGenerate)
 	for i := int64(0); i < multiStickerForm.StickersToGenerate; i++ {
-		var stickerItems []*models.StickerItem
-		if multiStickerForm.Items != nil && len(multiStickerForm.Items) > 0 {
-			stickerItems = make([]*models.StickerItem, 0, len(multiStickerForm.Items))
-			for _, item := range multiStickerForm.Items {
-				itemBatchlabel, _ := s.GetBatchlabelByBatchNo(plantID, item.BatchNo, false, false, false, false, false, false)
-				stickerItem := &models.StickerItem{
-					Product:    s.productService.ToModel(item.Product),
-					Quantity:   item.Quantity,
-					BatchNo:    item.BatchNo,
-					Batchlabel: s.ToBatchlabelModel(plantID, itemBatchlabel),
-				}
-				stickerItems = append(stickerItems, stickerItem)
-			}
+		stickerItems, err := s.createStickerItems(plantID, batchlabelID, multiStickerForm.Items)
+		if err != nil {
+			return err
 		}
 
-		nextSerialNumber := fmt.Sprintf("%04d", totalCount+i+1)
+		nextSerialNumber := fmt.Sprintf(SerialNumberFormat, totalCount+i+1)
 		packetNo := shiftTotalCount + i + 1
-		packetNoString := fmt.Sprintf("%04d", packetNo)
+		packetNoString := fmt.Sprintf(PacketNoFormat, packetNo)
+
+		plantNo := fmt.Sprintf("%02d", plantID)
+		barcode := fmt.Sprintf("%s%s%s%s", plantNo, batchlabelForm.BatchNo, nextSerialNumber, batchlabelForm.Machine.Code)
+
 		stickerModel := &models.Sticker{
-			Barcode:        "",
+			Barcode:        barcode,
 			PacketNo:       packetNoString,
 			PrintCount:     0,
 			Shift:          multiStickerForm.Shift,
@@ -353,27 +352,52 @@ func (s *DefaultBatchlabelService) CreateSticker(plantID uint, batchlabelID uint
 			BatchlabelID:   batchlabelID,
 			PlantID:        plantID,
 		}
-		plantNo := fmt.Sprintf("%02d", plantID)
-		stickerModel.Barcode = fmt.Sprintf("%s%s%s%s", plantNo, stickerModel.BatchNo, nextSerialNumber, stickerModel.MachineNo)
+
 		if stickerItems != nil {
 			stickerModel.StickerItems = stickerItems
 		}
 		stickers = append(stickers, stickerModel)
 	}
+
 	err = s.stickerRepository.CreateAll(plantID, batchlabelID, stickers)
 	if err != nil {
 		return err
 	}
+
 	totalCount, err = s.stickerRepository.GetCount(plantID, batchlabelID)
 	if err != nil {
 		return responses.NewInputError("sticker_count", "failed to fetch stickers count", batchlabelID)
 	}
+
 	stickersAvailable = batchlabelForm.GetStickerCountToPrint() - totalCount
 	if stickersAvailable > 0 {
 		return s.batchlabelRepository.MarkProcessStatusAs(plantID, batchlabelID, types.ProcessStarted)
 	} else {
 		return s.batchlabelRepository.MarkProcessStatusAs(plantID, batchlabelID, types.ProcessClosed)
 	}
+}
+
+func (s *DefaultBatchlabelService) createStickerItems(plantID uint, batchlabelID uint, items []*batchlabel.StickerItem) ([]*models.StickerItem, error) {
+	var stickerItems []*models.StickerItem
+	if items != nil && len(items) > 0 {
+		for itemIndex, item := range items {
+			if item.BatchNo != "" {
+				itemBatchlabel, stickerItemErr := s.GetBatchlabelByBatchNo(plantID, item.BatchNo, false, false, false, false, false, false)
+				if stickerItemErr != nil {
+					return nil, responses.NewInputError(fmt.Sprintf("items.%d.batch_no", itemIndex), "failed to connect with batch number", batchlabelID)
+				}
+
+				stickerItem := &models.StickerItem{
+					Product:    s.productService.ToModel(item.Product),
+					Quantity:   item.Quantity,
+					BatchNo:    item.BatchNo,
+					Batchlabel: s.ToBatchlabelModel(plantID, itemBatchlabel),
+				}
+				stickerItems = append(stickerItems, stickerItem)
+			}
+		}
+	}
+	return stickerItems, nil
 }
 
 func (s *DefaultBatchlabelService) GetStickerByID(plantID uint, batchlabelID uint, id uint) (*batchlabel.StickerForm, error) {

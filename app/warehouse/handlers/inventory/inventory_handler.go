@@ -123,7 +123,7 @@ func (ph *Handler) FinishedGoodsStockin(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Raw material stockin successfully"))
+	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Goods stockin successfully"))
 }
 
 func (ph *Handler) FinishedGoodStockin(c *gin.Context) {
@@ -145,13 +145,13 @@ func (ph *Handler) FinishedGoodStockin(c *gin.Context) {
 		return
 	}
 
-	err := ph.service.CreateFinishedGoodStockIn(plantForm.ID, &finishedGoodStockInForm)
+	stickerForm, err := ph.service.CreateFinishedGoodStockIn(plantForm.ID, &finishedGoodStockInForm)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	c.JSON(http.StatusCreated, responses.NewSuccessResponse(http.StatusCreated, "Raw material stockin successfully"))
+	c.JSON(http.StatusCreated, responses.NewSuccessDataResponse(http.StatusCreated, "Goods stockin successfully", stickerForm))
 }
 
 func (ph *Handler) AttachContainer(c *gin.Context) {

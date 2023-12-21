@@ -15,6 +15,7 @@ type StoreRepository interface {
 	GetAll(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Store, int64, error)
 	Create(plantID uint, store *models.Store) error
 	GetByID(plantID uint, id uint) (*models.Store, error)
+	GetByCode(plantID uint, code string) (*models.Store, error)
 	Update(plantID uint, store *models.Store) error
 	Delete(plantID uint, id uint) error
 	DeleteMulti(plantID uint, ids []uint) error
@@ -118,6 +119,15 @@ func (p *StoreGormRepository) GetByID(plantID uint, id uint) (*models.Store, err
 	var storeModel *models.Store
 	if err := p.db.Preload("Approvers").Preload("Category").Where("plant_id = ?", plantID).First(&storeModel, id).Error; err != nil {
 		log.Debug().Err(err).Msg("Failed to get store by ID")
+		return nil, err
+	}
+	return storeModel, nil
+}
+
+func (p *StoreGormRepository) GetByCode(plantID uint, code string) (*models.Store, error) {
+	var storeModel *models.Store
+	if err := p.db.Where("plant_id = ?", plantID).Where("code = ?", code).First(&storeModel).Error; err != nil {
+		log.Debug().Err(err).Msg("Failed to get store by Code")
 		return nil, err
 	}
 	return storeModel, nil

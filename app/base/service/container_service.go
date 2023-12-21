@@ -2,7 +2,6 @@ package service
 
 import (
 	"star-wms/app/base/dto/container"
-	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	"star-wms/app/base/repository"
 	"star-wms/core/common/dto"
@@ -11,7 +10,8 @@ import (
 )
 
 type ContainerService interface {
-	GetAllContainersRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
+	GetAllContainersRequiredApproval(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
+	GetContainersReports(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
 	GetAllContainers(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error)
 	GetStatistics(plantID uint, filter container.Filter) *container.Statistics
 	CreateContainer(plantID uint, containerForm *container.Form) error
@@ -49,8 +49,16 @@ func NewContainerService(repo repository.ContainerRepository, storeService Store
 	return &DefaultContainerService{repo: repo, storeService: storeService, storelocationService: storelocationService, productService: productService}
 }
 
-func (s *DefaultContainerService) GetAllContainersRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
-	data, count, err := s.repo.GetAllRequiredApproval(plantID, stores, filter, pagination, sorting)
+func (s *DefaultContainerService) GetAllContainersRequiredApproval(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
+	data, count, err := s.repo.GetAllRequiredApproval(plantID, filter, pagination, sorting)
+	if err != nil {
+		return nil, count, err
+	}
+	return s.ToFormSlice(plantID, data), count, err
+}
+
+func (s *DefaultContainerService) GetContainersReports(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
+	data, count, err := s.repo.GetAll(plantID, filter, pagination, sorting, true, true, true)
 	if err != nil {
 		return nil, count, err
 	}
@@ -58,7 +66,7 @@ func (s *DefaultContainerService) GetAllContainersRequiredApproval(plantID uint,
 }
 
 func (s *DefaultContainerService) GetAllContainers(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*container.Form, int64, error) {
-	data, count, err := s.repo.GetAll(plantID, filter, pagination, sorting)
+	data, count, err := s.repo.GetAll(plantID, filter, pagination, sorting, false, false, false)
 	if err != nil {
 		return nil, count, err
 	}
@@ -76,9 +84,9 @@ func (s *DefaultContainerService) GetStatistics(plantID uint, filter container.F
 }
 
 func (s *DefaultContainerService) CreateContainer(plantID uint, containerForm *container.Form) error {
-	if s.ExistsByName(plantID, containerForm.Name, 0) {
-		return responses.NewInputError("name", "already exists", containerForm.Name)
-	}
+	//if s.ExistsByName(plantID, containerForm.Name, 0) {
+	//	return responses.NewInputError("name", "already exists", containerForm.Name)
+	//}
 	if s.ExistsByCode(plantID, containerForm.Code, 0) {
 		return responses.NewInputError("code", "already exists", containerForm.Code)
 	}
@@ -103,9 +111,9 @@ func (s *DefaultContainerService) GetContainerByCode(plantID uint, code string, 
 }
 
 func (s *DefaultContainerService) UpdateContainer(plantID uint, id uint, containerForm *container.Form) error {
-	if s.ExistsByName(plantID, containerForm.Name, id) {
-		return responses.NewInputError("name", "already exists", containerForm.Name)
-	}
+	//if s.ExistsByName(plantID, containerForm.Name, id) {
+	//	return responses.NewInputError("name", "already exists", containerForm.Name)
+	//}
 	if s.ExistsByCode(plantID, containerForm.Code, id) {
 		return responses.NewInputError("code", "already exists", containerForm.Code)
 	}
@@ -257,6 +265,7 @@ func (s *DefaultContainerService) ToContentForm(plantID uint, contentModel *mode
 	contentForm := &container.ContentForm{
 		ID:       contentModel.ID,
 		Quantity: contentModel.Quantity,
+		Barcode:  contentModel.Barcode,
 	}
 	contentForm.PlantID = contentModel.PlantID
 	if contentModel.Product != nil {

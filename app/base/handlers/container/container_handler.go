@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"star-wms/app/admin/dto/plant"
@@ -22,6 +23,36 @@ func NewContainerHandler(s service.ContainerService) *Handler {
 	return &Handler{
 		service: s,
 	}
+}
+
+// GetReport containers with filter, pagination, and sorting
+func (ph *Handler) GetReport(c *gin.Context) {
+	plantValue, _ := c.Get(auth.AuthPlantKey)
+	plantForm, _ := plantValue.(plant.Form)
+
+	var filter container.Filter
+	paginationValue, _ := c.Get("pagination")
+	pagination, _ := paginationValue.(requests.Pagination)
+
+	sortingValue, _ := c.Get("sorting")
+	sorting, _ := sortingValue.(requests.Sorting)
+
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		resp := responses.NewValidationErrorResponse(err, filter)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	containers, totalRecords, err := ph.service.GetContainersReports(plantForm.ID, filter, pagination, sorting)
+	if err != nil {
+		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+		c.JSON(resp.Status, resp)
+		return
+	}
+	pageResponse := responses.NewPageResponse(containers, totalRecords, pagination.Page, pagination.PageSize)
+	if filter.Statistics {
+		pageResponse.Statistics = ph.service.GetStatistics(plantForm.ID, filter)
+	}
+	c.JSON(http.StatusOK, pageResponse)
 }
 
 // List containers with filter, pagination, and sorting
@@ -80,7 +111,19 @@ func (ph *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	err := ph.service.CreateContainer(plantForm.ID, &containerForm)
+	var err error
+	containerCode := containerForm.Code
+	for i := 0; i < containerForm.NoOfContainer; i++ {
+		if i > 0 {
+			containerCode = getNextCode(containerCode)
+			containerForm.Code = containerCode
+		}
+		err = ph.service.CreateContainer(plantForm.ID, &containerForm)
+		if err != nil {
+			break
+		}
+	}
+
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)
@@ -289,4 +332,30 @@ func (ph *Handler) ReportApprovals(c *gin.Context) {
 	reports := ph.service.ReportApprovals(plantForm.ID, filter)
 	dataResponse := responses.NewDataResponse(reports)
 	c.JSON(http.StatusOK, dataResponse)
+}
+
+func getNextCode(preCode string) string {
+	prefixEnd := 0
+	for index, char := range preCode {
+		if _, err := strconv.Atoi(string(char)); err != nil {
+			prefixEnd = index + 1
+		}
+	}
+
+	prefix := preCode[:prefixEnd]
+	numericPart := preCode[prefixEnd:]
+	var incrementedNumericPart string
+	if numericPart != "" {
+		numericValue, err := strconv.Atoi(numericPart)
+		if err != nil {
+			// Handle error if conversion fails
+			return ""
+		}
+		numericValue++
+		incrementedNumericPart = fmt.Sprintf("%0*d", len(numericPart), numericValue)
+	} else {
+		incrementedNumericPart = "00001"
+	}
+
+	return prefix + incrementedNumericPart
 }

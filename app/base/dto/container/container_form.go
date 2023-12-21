@@ -24,4 +24,5 @@ type Form struct {
 	StoreID       *uint               `json:"store_id" binding:"-"`
 	Store         *store.Form         `json:"store" binding:"-"`
 	Contents      []*ContentForm      `json:"contents" binding:"-"`
+	NoOfContainer int                 `json:"no_of_container"`
 }

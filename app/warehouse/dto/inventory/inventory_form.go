@@ -26,9 +26,8 @@ type FinishedGoodsStockInForm struct {
 }
 
 type FinishedGoodStockInForm struct {
-	Store         *store.Form `json:"store" validationTag:"store.id" validate:"required,validRelationID,structonly"`
-	ContainerCode string      `json:"container_code" validate:"required,min=1,max=100"`
-	Barcode       string      `json:"barcode" validate:"required"`
+	ContainerCode string `json:"container_code" validate:"required,min=1,max=100"`
+	Barcode       string `json:"barcode" validate:"required"`
 }
 
 type AttachContainerForm struct {

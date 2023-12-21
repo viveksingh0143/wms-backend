@@ -41,7 +41,6 @@ func NewDataResponse(data interface{}) APIResponse {
 		Data:   data,
 	}
 }
-
 func NewSuccessDataResponse(status int, message string, data interface{}) APIResponse {
 	return APIResponse{
 		Status:  status,

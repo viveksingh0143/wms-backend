@@ -145,12 +145,12 @@ func (p *BatchlabelGormRepository) Update(plantID uint, batchlabelModel *models.
 		batchlabelModel.Customer = customer
 
 		var joborder *baseModels.Joborder
-		if batchlabelModel.Joborder.ID > 0 {
-			if err := tx.First(&joborder, batchlabelModel.Joborder.ID).Error; err != nil {
-				log.Debug().Err(err).Msg("Failed to get job order by ID")
-				return err
-			}
-		}
+		//if batchlabelModel.Joborder.ID > 0 {
+		//	if err := tx.First(&joborder, batchlabelModel.Joborder.ID).Error; err != nil {
+		//		log.Debug().Err(err).Msg("Failed to get job order by ID")
+		//		return err
+		//	}
+		//}
 		batchlabelModel.Joborder = joborder
 
 		var joborderItem *baseModels.JoborderItem

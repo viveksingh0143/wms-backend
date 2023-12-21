@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"star-wms/app/admin/dto/plant"
-	"star-wms/app/admin/dto/user"
 	"star-wms/app/base/dto/container"
 	baseService "star-wms/app/base/service"
 	"star-wms/core/auth"
@@ -28,18 +27,18 @@ func NewStockapprovalHandler(storeService baseService.StoreService, containerSer
 
 // List stockapprovals with filter, pagination, and sorting
 func (ph *Handler) List(c *gin.Context) {
-	authValue, _ := c.Get(auth.AuthUserKey)
-	authUser := authValue.(user.Form)
+	//authValue, _ := c.Get(auth.AuthUserKey)
+	//authUser := authValue.(user.Form)
 
 	plantValue, _ := c.Get(auth.AuthPlantKey)
 	plantForm, _ := plantValue.(plant.Form)
 
-	stores, err := ph.storeService.GetAllStoresByApprover(plantForm.ID, authUser.ID)
-	if err != nil {
-		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
-		c.JSON(resp.Status, resp)
-		return
-	}
+	//stores, err := ph.storeService.GetAllStoresByApprover(plantForm.ID, authUser.ID)
+	//if err != nil {
+	//	resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
+	//	c.JSON(resp.Status, resp)
+	//	return
+	//}
 
 	var filter container.Filter
 	paginationValue, _ := c.Get("pagination")
@@ -53,7 +52,7 @@ func (ph *Handler) List(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	containers, totalRecords, err := ph.containerService.GetAllContainersRequiredApproval(plantForm.ID, stores, filter, pagination, sorting)
+	containers, totalRecords, err := ph.containerService.GetAllContainersRequiredApproval(plantForm.ID, filter, pagination, sorting)
 	if err != nil {
 		resp := responses.NewErrorResponse(http.StatusInternalServerError, "Something went wrong at server", err)
 		c.JSON(resp.Status, resp)

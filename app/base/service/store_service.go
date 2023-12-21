@@ -16,6 +16,7 @@ type StoreService interface {
 	GetAllStores(plantID uint, filter store.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*store.Form, int64, error)
 	CreateStore(plantID uint, storeForm *store.Form) error
 	GetStoreByID(plantID uint, id uint) (*store.Form, error)
+	GetStoreByCode(plantID uint, code string) (*store.Form, error)
 	UpdateStore(plantID uint, id uint, storeForm *store.Form) error
 	DeleteStore(plantID uint, id uint) error
 	DeleteStores(plantID uint, ids []uint) error
@@ -77,6 +78,14 @@ func (s *DefaultStoreService) CreateStore(plantID uint, storeForm *store.Form) e
 
 func (s *DefaultStoreService) GetStoreByID(plantID uint, id uint) (*store.Form, error) {
 	data, err := s.repo.GetByID(plantID, id)
+	if err != nil {
+		return nil, err
+	}
+	return s.ToForm(plantID, data), nil
+}
+
+func (s *DefaultStoreService) GetStoreByCode(plantID uint, code string) (*store.Form, error) {
+	data, err := s.repo.GetByCode(plantID, code)
 	if err != nil {
 		return nil, err
 	}

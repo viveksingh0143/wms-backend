@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"star-wms/app/base/dto/container"
-	"star-wms/app/base/dto/store"
 	"star-wms/app/base/models"
 	warehouseModels "star-wms/app/warehouse/models"
 	"star-wms/core/common/dto"
@@ -17,8 +16,8 @@ import (
 
 type ContainerRepository interface {
 	GetStatistics(plantID uint, filter container.Filter) (int64, int64, int64, int64)
-	GetAllRequiredApproval(plantID uint, stores []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error)
-	GetAll(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error)
+	GetAllRequiredApproval(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error)
+	GetAll(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting, needStore bool, needStoreLocation bool, needProduct bool) ([]*models.Container, int64, error)
 	Create(plantID uint, container *models.Container) error
 	GetByID(plantID uint, id uint) (*models.Container, error)
 	GetByCode(plantID uint, code string, needContents bool, needProduct bool, needStore bool, needLocation bool) (*models.Container, error)
@@ -81,17 +80,17 @@ func (p *ContainerGormRepository) GetStatistics(plantID uint, filter container.F
 	return emptyCount, partialCount, fullCount, waitingCount
 }
 
-func (p *ContainerGormRepository) GetAllRequiredApproval(plantID uint, storeForms []*store.Form, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error) {
+func (p *ContainerGormRepository) GetAllRequiredApproval(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error) {
 	var containers []*models.Container
 	var count int64
-	storeIds := make([]uint, len(storeForms))
-	for _, storeForm := range storeForms {
-		storeIds = append(storeIds, storeForm.ID)
-	}
+	//storeIds := make([]uint, len(storeForms))
+	//for _, storeForm := range storeForms {
+	//	storeIds = append(storeIds, storeForm.ID)
+	//}
 
 	query := p.db.Model(&models.Container{})
 	query.Where("plant_id = ?", plantID)
-	query.Where("store_id in ?", storeIds)
+	//query.Where("store_id in ?", storeIds)
 	query.Where("product_id is not null")
 	query.Where("approved = 3")
 	query = utils.BuildQuery(query, filter)
@@ -112,7 +111,7 @@ func (p *ContainerGormRepository) GetAllRequiredApproval(plantID uint, storeForm
 	return containers, count, nil
 }
 
-func (p *ContainerGormRepository) GetAll(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting) ([]*models.Container, int64, error) {
+func (p *ContainerGormRepository) GetAll(plantID uint, filter container.Filter, pagination commonModels.Pagination, sorting commonModels.Sorting, needStore bool, needStoreLocation bool, needProduct bool) ([]*models.Container, int64, error) {
 	var containers []*models.Container
 	var count int64
 
@@ -128,7 +127,16 @@ func (p *ContainerGormRepository) GetAll(plantID uint, filter container.Filter, 
 	query = utils.ApplySorting(query, sorting)
 	query = utils.ApplyPagination(query, pagination)
 
-	if err := query.Preload("Store").Preload("Storelocation").Preload("Product").Find(&containers).Error; err != nil {
+	if needStore {
+		query.Preload("Store")
+	}
+	if needStoreLocation {
+		query.Preload("Storelocation")
+	}
+	if needProduct {
+		query.Preload("Product")
+	}
+	if err := query.Find(&containers).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to get all containers")
 		return nil, 0, err
 	}

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -60,12 +61,21 @@ func (p *StickerGormRepository) GetCountForBatchlabel(plantID uint, batchlabelID
 
 func (p *StickerGormRepository) GetCountForShift(plantID uint, batchlabelID uint, shift string, createdAt time.Time) (int64, error) {
 	var count int64
-	query := p.db.Model(&models.Sticker{})
-	query.
+	query := p.db.Model(&models.Sticker{}).
 		Where("plant_id = ?", plantID).
 		Where("batchlabel_id = ?", batchlabelID).
-		Where("shift", shift).
-		Where("DATE(created_at) = DATE(?)", createdAt)
+		Where("shift = ?", shift)
+
+	// Check if the database dialect is MySQL or MSSQL and adjust the query accordingly
+	dbDialector := p.db.Dialector.Name()
+	switch dbDialector {
+	case "mysql":
+		query = query.Where("DATE(created_at) = DATE(?)", createdAt)
+	case "mssql", "sqlserver":
+		query = query.Where("CONVERT(date, created_at) = CONVERT(date, ?)", createdAt)
+	default:
+		return 0, errors.New("unsupported database dialect")
+	}
 
 	if err := query.Count(&count).Error; err != nil {
 		log.Error().Err(err).Msg("Failed to count stickers")

@@ -187,11 +187,11 @@ func (s *DefaultBulkService) ImportMaterialDataFromCSV(csvFilePath string) (bool
 				log.Error().Err(err).Msgf("Failed to get product by code: %s", materialCode)
 				continue
 			} else {
-				notFoundBomProduct[materialCode] = &product.Form{
-					Code:        materialCode,
-					Name:        materialDescription,
-					ProductType: productForm.ProductType,
-				}
+				//notFoundBomProduct[materialCode] = &product.Form{
+				//	Code:        materialCode,
+				//	Name:        materialDescription,
+				//	ProductType: productForm.ProductType,
+				//}
 			}
 			bomProducts[materialCode] = productForm
 		}
